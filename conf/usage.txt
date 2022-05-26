@@ -1,0 +1,20 @@
+
+DESCRIPTION:
+
+    Encrypts or decrypts using the NTRU encryption.  Reads input from STDIN.
+    Writes output to STDOUT or a specified file.
+
+USAGE:
+
+    $ ntrutil options <-o> <output filename>
+
+NOTE: You may press CTRL-D twice to end the the input stream.
+
+    Options
+
+	-e   | --encrypt        Encrypt from stdin to stdout.
+	-d   | --decrypt        Decrypt from stdin to stdout.
+	-t   | --threads        Use specified number of system threads [Default: 2].
+	-x   | --rxjava         Use the RxJava (Reactive eXtension).
+	-h   | --help           Display usage information.
+	-?   | -u | --usage     Display usage information.
