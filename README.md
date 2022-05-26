@@ -1,20 +1,20 @@
-*Introduction*
+## Introduction
 NtrUtil may be used as a library to encrypt/decrypt input streams or called as
 a command line tool reading from stdin writing to stdout.
 
-*Library Usage*
+## Library Usage
 Class com.tagfoster.ntrutil.NtrUtil's encrypt(...) and decrypt(...) methods may
 be called.
 
-*Command Line Usage*
+## Command Line Usage
 Please read usage.txt which you will find within the conf folder.
 
-*Usage Examples*
+## Usage Examples
 
-    $ wc -l lorem_ipsum_100.txt
-    $ cat lorem_ipsum_100.txt | bin/ntrutil -e | bin/ntrutil -d | wc -l
+    `$ wc -l lorem_ipsum_100.txt`
+    `$ cat lorem_ipsum_100.txt | bin/ntrutil -e | bin/ntrutil -d | wc -l`
 
-*Code Analysis*
+## Code Analysis
 This Java code includes two separate implementation techiques for
 multi-threaded/concurrent processing, one using the JDK's ExecutorServices and
 another using RxJava 3.x.  The RxJava implementation is less readable,
