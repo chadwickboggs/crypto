@@ -1,11 +1,11 @@
 
 DESCRIPTION:
 
-    Encrypts or decrypts using the NTRU cryptosystem.  Input gets read from
+    Encrypts or decrypts using the XOR cryptosystem.  Input gets read from
     STDIN.  Output gets written to STDOUT.
 
-    NTRU is a two key, public key, private cryptosystem.  Its keys and
-    encryption parameters get stored in the "~/.ntrutil" folder.
+    XOR is a single/shared key cryptosystem.  Its key and encryption parameters
+    get stored in the "~/.xorutil" folder.
 
 USAGE:
 

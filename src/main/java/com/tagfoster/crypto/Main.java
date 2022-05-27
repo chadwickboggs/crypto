@@ -1,6 +1,7 @@
 package com.tagfoster.crypto;
 
 import com.tagfoster.crypto.ntrutil.NtrUtil;
+import com.tagfoster.crypto.xorutil.XorUtil;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Scheduler;
 import io.reactivex.rxjava3.core.Single;
@@ -11,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -21,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import static com.tagfoster.crypto.Base64Util.decodeBase64;
 
@@ -38,8 +41,9 @@ public final class Main {
 
     private static final String USAGE_TXT_FILENAME = "usage-cryptosystem.txt";
     private static final int DEFAULT_THREAD_COUNT = 2;
-
+    private static final int messageLength = 64;
     private static int threadCount = DEFAULT_THREAD_COUNT;
+    private volatile static BufferedReader bufferedReader;
 
     public static void main( @NotNull final String... args ) throws Exception {
         if ( args.length == 0 ) {
@@ -62,7 +66,7 @@ public final class Main {
                 exit( ExitCode.MISSING_CLI_ARGUMENTS.ordinal() );
             }
             final Cryptosystem cryptosystem = getCryptosystem(
-                String.valueOf( options.valueOf( "c" ) )
+                String.valueOf( options.valueOf( "c" ) ), messageLength
             );
 
             if ( options.has( "t" ) || options.has( "threads" ) ) {
@@ -75,7 +79,7 @@ public final class Main {
                 //
                 // 1. Input one threadCount sized list of chunks.
                 //
-                final List<byte[]> inputList = readInput( threadCount, cryptosystem, options );
+                final List<byte[]> inputList = readInput( threadCount, options );
 
                 didRead = validateInput( inputList, didRead );
 
@@ -147,10 +151,98 @@ public final class Main {
     }
 
     @NotNull
-    private static Cryptosystem getCryptosystem( @NotNull final String cryptosystemName ) {
+    private static List<byte[]> inputBinary(
+        int intCount, @NotNull final InputStream inputStream
+    ) {
+        final List<byte[]> cypherTexts = new ArrayList<>();
+        IntStream.rangeClosed( 0, intCount ).forEachOrdered( value -> {
+            byte[] input = inputBinary( inputStream );
+            if ( input.length > 0 ) {
+                cypherTexts.add( input );
+            }
+        } );
+
+        return cypherTexts;
+    }
+
+
+    @NotNull
+    private static byte[] inputBinary( @NotNull final InputStream inputStream ) {
+        try ( final ByteArrayOutputStream outputStream = new ByteArrayOutputStream() ) {
+            byte[] value = new byte[messageLength];
+            int numRead;
+            while ( (numRead = inputStream.read( value )) == 0 ) ;
+            if ( numRead < 0 ) {
+                return outputStream.toByteArray();
+            }
+
+            outputStream.write( value, 0, numRead );
+            outputStream.flush();
+
+            return outputStream.toByteArray();
+        }
+        catch ( IOException e ) {
+            throw new RuntimeException( e );
+        }
+    }
+
+
+    @NotNull
+    private static List<String> inputText(
+        int count, @NotNull final InputStream inputStream
+    ) {
+        final List<String> cypherTexts = new ArrayList<>();
+        String cypherText;
+        do {
+            if ( cypherTexts.size() == count ) {
+                break;
+            }
+
+            cypherText = inputText( inputStream );
+            if ( cypherText.length() > 0 ) {
+                cypherTexts.add( cypherText );
+            }
+        }
+        while ( cypherText.length() > 0 );
+
+        return cypherTexts;
+    }
+
+    @NotNull
+    private static String inputText( @NotNull final InputStream inputStream ) {
+        final StringBuilder buf = new StringBuilder();
+        try {
+            String line;
+            while ( true ) {
+                if ( (line = getBufferedReader( inputStream ).readLine()) == null ) break;
+                buf.append( line );
+                if ( line.endsWith( "==" ) ) break;
+            }
+        }
+        catch ( IOException e ) {
+            throw new RuntimeException( e );
+        }
+
+        return buf.toString();
+    }
+
+    @NotNull
+    private synchronized static BufferedReader getBufferedReader( @NotNull final InputStream inputStream ) {
+        if ( bufferedReader == null ) {
+            bufferedReader = new BufferedReader( new InputStreamReader( inputStream ) );
+        }
+
+        return bufferedReader;
+    }
+
+    @NotNull
+    private static Cryptosystem getCryptosystem(
+        @NotNull final String cryptosystemName, int messageLength
+    ) {
         Cryptosystem cryptosystem = null;
         switch ( CryptosystemName.valueOf( cryptosystemName ) ) {
-            case NTRU -> cryptosystem = new NtrUtil();
+            case XOR -> cryptosystem = new XorUtil( messageLength );
+            case NTRU -> cryptosystem = new NtrUtil( messageLength );
             default -> exit( ExitCode.UNRECOGNIZED_ARGUMENT_VALUE.ordinal() );
         }
 
@@ -173,13 +265,13 @@ public final class Main {
     }
 
     private static List<byte[]> readInput(
-        int chunkCount, @NotNull final Cryptosystem cryptosystem, @NotNull final OptionSet options
+        int chunkCount, @NotNull final OptionSet options
     ) {
         if ( options.has( "e" ) || options.has( "encrypt" ) ) {
-            return cryptosystem.inputBinary( chunkCount, System.in );
+            return inputBinary( chunkCount, System.in );
         }
 
-        return decodeBase64( cryptosystem.inputText( chunkCount, System.in ) );
+        return decodeBase64( inputText( chunkCount, System.in ) );
     }
 
     private static void writeOutput(
@@ -285,9 +377,7 @@ public final class Main {
 
             final Scheduler.Worker worker = executorScheduler.createWorker();
             final Single<Scheduler.Worker> single = Single.just( worker );
-            single.doOnError( throwable ->
-                exit( throwable )
-            );
+            single.doOnError( Main::exit );
             executorScheduler.start();
             single.blockingSubscribe();
 
@@ -318,7 +408,7 @@ public final class Main {
 
 
     public enum CryptosystemName {
-        NTRU
+        XOR, NTRU
     }
 
 

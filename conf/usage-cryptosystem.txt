@@ -1,12 +1,17 @@
 
 DESCRIPTION:
 
-    Encrypts or decrypts using the NTRU encryption.  Reads input from STDIN.
-    Writes output to STDOUT or a specified file.
+    Encrypts or decrypts using the specidied cryptosystem.  Input gets read
+    from STDIN.  Output gets written to STDOUT.
+
+    Presently Supported Cryptosystems: XOR, NTRU
+
+    XOR is a single/shared key cryptosystem.  NTRU is a two key, public key,
+    private cryptosystem.
 
 USAGE:
 
-    $ ntrutil options <-o> <output filename>
+    $ crypto -c <crytosystem name> options
 
 NOTE: You may press CTRL-D twice to end the the input stream.
 

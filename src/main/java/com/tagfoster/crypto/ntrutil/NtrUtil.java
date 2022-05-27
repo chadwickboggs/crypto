@@ -8,17 +8,10 @@ import net.sf.ntru.encrypt.EncryptionPublicKey;
 import net.sf.ntru.encrypt.NtruEncrypt;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.IntStream;
 
 
 /**
@@ -31,12 +24,14 @@ public final class NtrUtil implements Cryptosystem {
     private static final String PRIVATE_KEY_FILENAME = USER_STORE_FOLDER + "/encryption_private_key";
     private static final String PUBLIC_KEY_FILENAME = USER_STORE_FOLDER + "/encryption_public_key";
     private static final String ENCRYPTION_PARAMETERS_FILENAME = USER_STORE_FOLDER + "/encryption_parameters";
-
+    private final int messageLength;
     private volatile NtruEncrypt ntru = null;
     private volatile EncryptionParameters encryptionParameters = null;
     private volatile EncryptionKeyPair keyPair = null;
-    private volatile BufferedReader bufferedReader;
-    private int maxMessageLength = 64;
+
+    public NtrUtil( int messageLength ) {
+        this.messageLength = messageLength;
+    }
 
 
     @NotNull
@@ -47,88 +42,6 @@ public final class NtrUtil implements Cryptosystem {
     @NotNull
     public byte[] decrypt( @NotNull final byte[] message ) throws IOException {
         return getNTRU().decrypt( message, getKeyPair() );
-    }
-
-
-    @NotNull
-    public List<byte[]> inputBinary( int intCount, @NotNull final InputStream inputStream ) {
-        final List<byte[]> cypherTexts = new ArrayList<>();
-        IntStream.rangeClosed( 0, intCount ).forEachOrdered( value -> {
-            byte[] input = inputBinary( inputStream );
-            if ( input.length > 0 ) {
-                cypherTexts.add( input );
-            }
-        } );
-
-        return cypherTexts;
-    }
-
-
-    @NotNull
-    public byte[] inputBinary( @NotNull final InputStream inputStream ) {
-        try ( final ByteArrayOutputStream outputStream = new ByteArrayOutputStream() ) {
-            byte[] value = new byte[maxMessageLength];
-            int numRead;
-            while ( (numRead = inputStream.read( value )) == 0 ) ;
-            if ( numRead < 0 ) {
-                return outputStream.toByteArray();
-            }
-
-            outputStream.write( value, 0, numRead );
-            outputStream.flush();
-
-            return outputStream.toByteArray();
-        }
-        catch ( IOException e ) {
-            throw new RuntimeException( e );
-        }
-    }
-
-
-    @NotNull
-    public List<String> inputText( int count, @NotNull final InputStream inputStream ) {
-        final List<String> cypherTexts = new ArrayList<>();
-        String cypherText;
-        do {
-            if ( cypherTexts.size() == count ) {
-                break;
-            }
-
-            cypherText = inputText( inputStream );
-            if ( cypherText.length() > 0 ) {
-                cypherTexts.add( cypherText );
-            }
-        }
-        while ( cypherText.length() > 0 );
-
-        return cypherTexts;
-    }
-
-    @NotNull
-    public String inputText( @NotNull final InputStream inputStream ) {
-        final StringBuilder buf = new StringBuilder();
-        try {
-            String line;
-            while ( true ) {
-                if ( (line = getBufferedReader( inputStream ).readLine()) == null ) break;
-                buf.append( line );
-                if ( line.endsWith( "==" ) ) break;
-            }
-        }
-        catch ( IOException e ) {
-            throw new RuntimeException( e );
-        }
-
-        return buf.toString();
-    }
-
-    @NotNull
-    private synchronized BufferedReader getBufferedReader( @NotNull final InputStream inputStream ) {
-        if ( bufferedReader == null ) {
-            bufferedReader = new BufferedReader( new InputStreamReader( inputStream ) );
-        }
-
-        return bufferedReader;
     }
 
 
@@ -176,7 +89,12 @@ public final class NtrUtil implements Cryptosystem {
             }
         }
 
-        maxMessageLength = encryptionParameters.getMaxMessageLength();
+        if ( messageLength > encryptionParameters.getMaxMessageLength() ) {
+            throw new RuntimeException( String.format(
+                "Unsupported message length.  Message Length: %d, Supported Max Message Length: %d",
+                messageLength, encryptionParameters.getMaxMessageLength()
+            ) );
+        }
     }
 
     private synchronized void loadNTRU() throws IOException {
