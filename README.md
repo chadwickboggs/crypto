@@ -12,6 +12,11 @@ Please read usage.txt which you will find within the conf folder.
 ## Usage Examples
 
     `$ wc -l lorem_ipsum_100.txt`
+
+    `$ cat lorem_ipsum_100.txt | bin/crypto -c XOR -e | bin/crypto -c XOR -d | wc -l`
+    `$ cat lorem_ipsum_100.txt | bin/xorutil -e | bin/xorutil -d | wc -l`
+
+    `$ cat lorem_ipsum_100.txt | bin/crypto -c NTRU -e | bin/crypto -c NTRU -d | wc -l`
     `$ cat lorem_ipsum_100.txt | bin/ntrutil -e | bin/ntrutil -d | wc -l`
 
 ## Code Analysis

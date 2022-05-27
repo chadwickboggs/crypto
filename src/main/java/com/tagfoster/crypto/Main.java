@@ -32,7 +32,7 @@ import static com.tagfoster.crypto.Base64Util.decodeBase64;
  * This class implements command-line access to encryption/decryption.  The
  * cryptosystem it should used must be specified as a command line parameter.
  * <br>
- * Presently Supported Cryptosystems: NTRU
+ * Presently Supported Cryptosystems: XOR, NTRU
  * <br>
  * Input gets read from stdin.  Output gets written to stdout.  Encryption
  * output is Base64 encoded.  Decryption input is assumed to be Base64 encoded.
