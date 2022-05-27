@@ -1,5 +1,6 @@
-package com.tagfoster.ntrutil;
+package com.tagfoster.crypto.ntrutil;
 
+import com.tagfoster.crypto.Cryptosystem;
 import net.sf.ntru.encrypt.EncryptionKeyPair;
 import net.sf.ntru.encrypt.EncryptionParameters;
 import net.sf.ntru.encrypt.EncryptionPrivateKey;
@@ -24,7 +25,7 @@ import java.util.stream.IntStream;
  * This class implements NTRU encryption/decryption.  It store its NTRU
  * encryption parameters and keys in the "~/.ntrutil" folder.
  */
-public final class NtrUtil {
+public final class NtrUtil implements Cryptosystem {
 
     private static final String USER_STORE_FOLDER = System.getenv( "HOME" ) + "/.ntrutil";
     private static final String PRIVATE_KEY_FILENAME = USER_STORE_FOLDER + "/encryption_private_key";
@@ -50,7 +51,7 @@ public final class NtrUtil {
 
 
     @NotNull
-    List<byte[]> inputBinary( int intCount, @NotNull final InputStream inputStream ) {
+    public List<byte[]> inputBinary( int intCount, @NotNull final InputStream inputStream ) {
         final List<byte[]> cypherTexts = new ArrayList<>();
         IntStream.rangeClosed( 0, intCount ).forEachOrdered( value -> {
             byte[] input = inputBinary( inputStream );
@@ -64,7 +65,7 @@ public final class NtrUtil {
 
 
     @NotNull
-    byte[] inputBinary( @NotNull final InputStream inputStream ) {
+    public byte[] inputBinary( @NotNull final InputStream inputStream ) {
         try ( final ByteArrayOutputStream outputStream = new ByteArrayOutputStream() ) {
             byte[] value = new byte[maxMessageLength];
             int numRead;
@@ -85,7 +86,7 @@ public final class NtrUtil {
 
 
     @NotNull
-    List<String> inputText( int count, @NotNull final InputStream inputStream ) {
+    public List<String> inputText( int count, @NotNull final InputStream inputStream ) {
         final List<String> cypherTexts = new ArrayList<>();
         String cypherText;
         do {
@@ -104,7 +105,7 @@ public final class NtrUtil {
     }
 
     @NotNull
-    String inputText( @NotNull final InputStream inputStream ) {
+    public String inputText( @NotNull final InputStream inputStream ) {
         final StringBuilder buf = new StringBuilder();
         try {
             String line;

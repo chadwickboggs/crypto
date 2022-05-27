@@ -1,4 +1,4 @@
-package com.tagfoster.ntrutil;
+package com.tagfoster.crypto;
 
 import org.jetbrains.annotations.NotNull;
 

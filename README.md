@@ -3,7 +3,7 @@ NtrUtil may be used as a library to encrypt/decrypt input streams or called as
 a command line tool reading from stdin writing to stdout.
 
 ## Library Usage
-Class com.tagfoster.ntrutil.NtrUtil's encrypt(...) and decrypt(...) methods may
+Class com.tagfoster.crypto.ntrutil.NtrUtil's encrypt(...) and decrypt(...) methods may
 be called.
 
 ## Command Line Usage

@@ -1,0 +1,53 @@
+#!/bin/bash
+
+#JAVA_OPTS="${JAVA_OPTS} --source 19"
+#JAVA_OPTS="${JAVA_OPTS} --enable-preview"
+
+if [ "-g" == "${1}" ]; then
+    JAVA_OPTS="${JAVA_OPTS} -Xdebug -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
+    shift 1
+fi
+
+crypto_home="$(dirname ${0})"/..
+crypto_conf="${crypto_home}"/conf
+crypto_dist="${crypto_home}"/dist
+crypto_lib="${crypto_home}"/lib
+crypto_out="${crypto_home}"/out/production/ntrutil
+
+crypto_dist_escaped="$(/bin/echo "${crypto_dist}" | /usr/bin/sed 's/\//\\\//g')"
+crypto_lib_escaped="$(/bin/echo "${crypto_lib}" | /usr/bin/sed 's/\//\\\//g')"
+
+#
+# Add distribution to classpath.
+#
+
+dists="${crypto_dist}/$(/bin/ls "${crypto_dist}" | /usr/bin/tr '\n' ':')"
+dists="$(/bin/echo ${dists} | /usr/bin/sed "s/:/:${crypto_dist_escaped}\//g")"
+
+#
+# Add all library dependencies to classpath.
+#
+
+libs="${crypto_lib}/$(/bin/ls "${crypto_lib}" | /usr/bin/tr '\n' ':')"
+cp="${dists}:$(/bin/echo ${libs} | /usr/bin/sed "s/:/:${crypto_lib_escaped}\//g")"
+cp="${crypto_out}:${cp}"
+
+#
+# Prepend configuration folder to classpath.
+#
+
+cp="${crypto_conf}:${cp}"
+
+#
+# Prepend development output folder to classpath.
+#
+
+#cp="${crypto_home}/out/production/NtrUtil:${cp}"
+
+#
+# Execute the application.
+#
+
+java ${JAVA_OPTS} -cp "${cp}" com.tagfoster.crypto.Main $@
+
+exit $?
