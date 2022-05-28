@@ -41,9 +41,9 @@ public final class Main {
 
     private static final String USAGE_TXT_FILENAME = "usage-cryptosystem.txt";
     private static final int DEFAULT_THREAD_COUNT = 2;
-    private static final int DEFAULT_KEY_SIZE = 64;
+    private static final int DEFAULT_CHUNK_SIZE = 64;
     private static int threadCount = DEFAULT_THREAD_COUNT;
-    private static int messageLength = DEFAULT_KEY_SIZE;
+    private static int chunkSize = DEFAULT_CHUNK_SIZE;
     private volatile static BufferedReader bufferedReader;
 
     public static void main( @NotNull final String... args ) throws Exception {
@@ -64,14 +64,14 @@ public final class Main {
             }
 
             if ( options.has( "k" ) || options.has( "key" ) ) {
-                messageLength = Integer.parseInt( options.valueOf( "k" ).toString() );
+                chunkSize = Integer.parseInt( options.valueOf( "k" ).toString() );
             }
 
             if ( !options.has( "c" ) && !options.has( "cryptosystem" ) ) {
                 exit( ExitCode.MISSING_CLI_ARGUMENTS.ordinal() );
             }
             final Cryptosystem cryptosystem = getCryptosystem(
-                String.valueOf( options.valueOf( "c" ) ), messageLength
+                String.valueOf( options.valueOf( "c" ) ), chunkSize
             );
 
             if ( options.has( "t" ) || options.has( "threads" ) ) {
@@ -157,10 +157,10 @@ public final class Main {
 
     @NotNull
     private static List<byte[]> inputBinary(
-        int intCount, @NotNull final InputStream inputStream
+        int chunkSize, @NotNull final InputStream inputStream
     ) {
         final List<byte[]> cypherTexts = new ArrayList<>();
-        IntStream.rangeClosed( 0, intCount ).forEachOrdered( value -> {
+        IntStream.rangeClosed( 0, chunkSize ).forEachOrdered( value -> {
             byte[] input = inputBinary( inputStream );
             if ( input.length > 0 ) {
                 cypherTexts.add( input );
@@ -174,7 +174,7 @@ public final class Main {
     @NotNull
     private static byte[] inputBinary( @NotNull final InputStream inputStream ) {
         try ( final ByteArrayOutputStream outputStream = new ByteArrayOutputStream() ) {
-            byte[] value = new byte[messageLength];
+            byte[] value = new byte[chunkSize];
             int numRead;
             while ( (numRead = inputStream.read( value )) == 0 ) ;
             if ( numRead < 0 ) {
@@ -194,12 +194,12 @@ public final class Main {
 
     @NotNull
     private static List<String> inputText(
-        int count, @NotNull final InputStream inputStream
+        int chunkSize, @NotNull final InputStream inputStream
     ) {
         final List<String> cypherTexts = new ArrayList<>();
         String cypherText;
         do {
-            if ( cypherTexts.size() == count ) {
+            if ( cypherTexts.size() == chunkSize ) {
                 break;
             }
 
@@ -242,12 +242,12 @@ public final class Main {
 
     @NotNull
     private static Cryptosystem getCryptosystem(
-        @NotNull final String cryptosystemName, int messageLength
+        @NotNull final String cryptosystemName, int keySize
     ) {
         Cryptosystem cryptosystem = null;
         switch ( CryptosystemName.valueOf( cryptosystemName ) ) {
-            case XOR -> cryptosystem = new XorUtil( messageLength );
-            case NTRU -> cryptosystem = new NtrUtil( messageLength );
+            case XOR -> cryptosystem = new XorUtil( keySize );
+            case NTRU -> cryptosystem = new NtrUtil( keySize );
             default -> exit( ExitCode.UNRECOGNIZED_ARGUMENT_VALUE.ordinal() );
         }
 
@@ -404,7 +404,7 @@ public final class Main {
         parser.accepts( "encrypt" );
         parser.accepts( "decrypt" );
         parser.accepts( "rxjava" );
-        parser.accepts( "key" ).withRequiredArg().defaultsTo( String.valueOf( DEFAULT_KEY_SIZE ) );
+        parser.accepts( "key" ).withRequiredArg().defaultsTo( String.valueOf( DEFAULT_CHUNK_SIZE ) );
         parser.accepts( "threads" ).withRequiredArg().defaultsTo( String.valueOf( DEFAULT_THREAD_COUNT ) );
         parser.accepts( "help" );
         parser.accepts( "usage" );

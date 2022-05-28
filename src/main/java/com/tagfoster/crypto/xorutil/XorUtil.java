@@ -19,13 +19,13 @@ public final class XorUtil implements Cryptosystem {
 
     private static final String USER_STORE_FOLDER = System.getenv( "HOME" ) + "/.xorutil";
     private static final String KEY_FILENAME = USER_STORE_FOLDER + "/encryption_key";
-    private final int messageLength;
+    private final int keySize;
 
     private volatile byte[] key = null;
 
 
-    public XorUtil( int messageLength ) {
-        this.messageLength = messageLength;
+    public XorUtil( int keySize ) {
+        this.keySize = keySize;
     }
 
     @NotNull
@@ -66,7 +66,7 @@ public final class XorUtil implements Cryptosystem {
         if ( key == null ) {
             key = readKey();
             if ( key == null ) {
-                key = generateKey( messageLength );
+                key = generateKey( keySize );
                 saveKey();
             }
         }
@@ -91,12 +91,12 @@ public final class XorUtil implements Cryptosystem {
 
     @NotNull
     private String getKeyFilename() {
-        return String.format("%s.%d", KEY_FILENAME, messageLength);
+        return String.format("%s.%d", KEY_FILENAME, keySize );
     }
 
     @NotNull
-    private byte[] generateKey( int messageLength ) {
-        final byte[] bytes = new byte[messageLength];
+    private byte[] generateKey( int keySize ) {
+        final byte[] bytes = new byte[keySize];
         final SecureRandom secureRandom = new SecureRandom();
         for ( int i = 0; i < bytes.length; i++ ) {
             bytes[i] = (byte) secureRandom.nextInt();
