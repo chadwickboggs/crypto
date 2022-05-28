@@ -84,14 +84,14 @@ public final class Main {
                 //
                 // 1. Input one threadCount sized list of chunks.
                 //
-                final List<byte[]> inputList = readInput( threadCount, options );
+                final List<byte[]> inputList = readInput( chunkSize, options );
 
                 didRead = validateInput( inputList, didRead );
 
                 //
                 // 2. Process (encrypt/decrypt) the chunks.
                 //
-                final byte[][] outputs = processChunks( inputList, cryptosystem, options );
+                final byte[][] outputs = processChunks( inputList, threadCount, cryptosystem, options );
 
                 //
                 // 3. Output the processed chunks.
@@ -270,13 +270,13 @@ public final class Main {
     }
 
     private static List<byte[]> readInput(
-        int chunkCount, @NotNull final OptionSet options
+        int chunkSize, @NotNull final OptionSet options
     ) {
         if ( options.has( "e" ) || options.has( "encrypt" ) ) {
-            return inputBinary( chunkCount, System.in );
+            return inputBinary( chunkSize, System.in );
         }
 
-        return decodeBase64( inputText( chunkCount, System.in ) );
+        return decodeBase64( inputText( chunkSize, System.in ) );
     }
 
     private static void writeOutput(
@@ -297,19 +297,21 @@ public final class Main {
     @NotNull
     private static byte[][] processChunks(
         @NotNull final List<byte[]> inputList,
+        int threadCount,
         @NotNull final Cryptosystem cryptosystem,
         @NotNull final OptionSet options
     ) throws InterruptedException {
         if ( options.has( "x" ) || options.has( "rxjava" ) ) {
-            return processChunksConcurrentlyUsingRxJava( inputList, cryptosystem, options );
+            return processChunksConcurrentlyUsingRxJava( inputList, threadCount, cryptosystem, options );
         }
 
-        return processChunksConcurrently( inputList, cryptosystem, options );
+        return processChunksConcurrently( inputList, threadCount, cryptosystem, options );
     }
 
     @NotNull
     private static byte[][] processChunksConcurrently(
         @NonNull final List<byte[]> inputList,
+        int threadCount,
         @NonNull final Cryptosystem cryptosystem,
         @NonNull final OptionSet options
     ) throws InterruptedException {
@@ -344,6 +346,7 @@ public final class Main {
     @NotNull
     private static byte[][] processChunksConcurrentlyUsingRxJava(
         @NonNull final List<byte[]> inputList,
+        int threadCount,
         @NonNull final Cryptosystem cryptosystem,
         @NonNull final OptionSet options
     ) throws InterruptedException {
