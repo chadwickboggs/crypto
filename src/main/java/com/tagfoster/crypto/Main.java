@@ -13,9 +13,13 @@ import org.jetbrains.annotations.NotNull;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,9 +72,8 @@ public final class Main {
             if ( !options.has( "c" ) && !options.has( "cryptosystem" ) ) {
                 exit( ExitCode.MISSING_CLI_ARGUMENTS.ordinal() );
             }
-            final Cryptosystem cryptosystem = getCryptosystem(
-                String.valueOf( options.valueOf( "c" ) ), chunkSize
-            );
+            final String cryptosystemName = String.valueOf( options.valueOf( "c" ) );
+            final Cryptosystem cryptosystem = getCryptosystem( cryptosystemName, chunkSize );
 
             if ( options.has( "t" ) || options.has( "threads" ) ) {
                 threadCount = Integer.parseInt( options.valueOf( "t" ).toString() );
@@ -83,8 +86,8 @@ public final class Main {
                 // 1. Input one threadCount sized list of chunks.
                 //
                 List<byte[]> inputList;
-                if ( options.has( "d" ) || options.has( "decrypt" ) ) {
-                    inputList = Base64Util.decodeBase64( inputTextChunks( threadCount, System.in ) );
+                if ( isBase64Decode( cryptosystemName, options ) ) {
+                    inputList = Base64Util.decode( inputTextChunks( threadCount, System.in ) );
                 }
                 else {
                     inputList = inputBinaryChunks( chunkSize, threadCount, System.in );
@@ -100,13 +103,15 @@ public final class Main {
                 //
                 // 3. Output the processed chunks.
                 //
-                if ( options.has( "e" ) || options.has( "encrypt" ) ) {
-                    outputList = outputList.stream()
-                        .map( Base64Util::encodeBase64 )
-                        .map( String::getBytes )
-                        .collect( Collectors.toList() );
+                if ( isBase64Encode( cryptosystemName, options )) {
+                    Base64Util.encode( outputList ).stream()
+                        .forEachOrdered( System.out::print );
                 }
-                writeOutput( outputList );
+                else {
+                    outputList.stream()
+                        .map( String::new )
+                        .forEachOrdered( System.out::print );
+                }
             }
         }
         catch ( final Throwable t ) {
@@ -114,6 +119,40 @@ public final class Main {
         }
 
         exit( ExitCode.SUCCESS.ordinal() );
+    }
+
+    private static boolean isBase64Encode(
+        @NotNull final String cryptosystemName, @NotNull final OptionSet options
+    ) {
+        return options.has( "e" ) || options.has( "encrypt" );
+/*
+        if (
+            ( options.has( "e" ) || options.has( "encrypt" ) ) && (
+                options.has( "b" ) || options.has( "base64" ) ||
+                    cryptosystemName.equals(CryptosystemName.NTRU.name())
+        ) ) {
+            return true;
+        }
+
+        return false;
+*/
+    }
+
+    private static boolean isBase64Decode(
+        @NotNull final String cryptosystemName, @NotNull final OptionSet options
+    ) {
+        return options.has( "d" ) || options.has( "decrypt" );
+/*
+        if (
+            ( options.has( "d" ) || options.has( "decrypt" ) ) && (
+                options.has( "b" ) || options.has( "base64" ) ||
+                    cryptosystemName.equals( CryptosystemName.NTRU.name() )
+        ) ) {
+            return true;
+        }
+
+        return false;
+*/
     }
 
     @NotNull
@@ -289,12 +328,6 @@ public final class Main {
         return false;
     }
 
-    private static void writeOutput( @NotNull final List<byte[]> outputList ) {
-        outputList.stream()
-            .map( String::new )
-            .forEachOrdered( System.out::print );
-    }
-
     @NotNull
     private static List<byte[]> processChunks(
         @NotNull final List<byte[]> inputList,
@@ -401,12 +434,13 @@ public final class Main {
 
     @NotNull
     private static synchronized OptionParser getCliParser() {
-        final OptionParser parser = new OptionParser( "+c:?e?d?k:?t:?x?h?u?" );
+        final OptionParser parser = new OptionParser( "+c:?e?d?b?k:?t:?x?h?u?" );
 
         parser.recognizeAlternativeLongOptions( true );
         parser.accepts( "cryptosystem" );
         parser.accepts( "encrypt" );
         parser.accepts( "decrypt" );
+        parser.accepts( "base64" );
         parser.accepts( "rxjava" );
         parser.accepts( "key" ).withRequiredArg().defaultsTo( String.valueOf( DEFAULT_CHUNK_SIZE ) );
         parser.accepts( "threads" ).withRequiredArg().defaultsTo( String.valueOf( DEFAULT_THREAD_COUNT ) );

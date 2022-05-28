@@ -10,16 +10,22 @@ import java.util.stream.Collectors;
 public final class Base64Util {
 
     @NotNull
-    public static List<byte[]> decodeBase64( @NotNull final List<String> texts ) {
-        return texts.stream().map( Base64Util::decodeBase64 ).collect( Collectors.toList() );
+    public static List<byte[]> decode( @NotNull final List<String> texts ) {
+        return texts.stream().map( Base64Util::decode ).collect( Collectors.toList() );
     }
 
     @NotNull
-    public static byte[] decodeBase64( @NotNull final String text ) {
+    public static byte[] decode( @NotNull final String text ) {
         return Base64.getDecoder().decode( text );
     }
 
-    public static String encodeBase64( @NotNull final byte[] bytes ) {
+    @NotNull
+    public static List<String> encode( @NotNull final List<byte[]> bytes ) {
+        return bytes.stream().map( Base64Util::encode ).collect( Collectors.toList() );
+    }
+
+    @NotNull
+    public static String encode( @NotNull final byte[] bytes ) {
         return new String( Base64.getEncoder().encode( bytes ) );
     }
 }
