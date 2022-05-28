@@ -28,6 +28,17 @@ public final class XorUtil implements Cryptosystem {
         this.keySize = keySize;
     }
 
+    private static void validateMessageLength(
+        @NotNull byte[] message, @NotNull byte[] key
+    ) {
+        if ( message.length > key.length ) {
+            throw new RuntimeException( String.format(
+                "Unsupported message length.  Message Length: %d, Supported Max Message Length: %d",
+                message.length, key.length
+            ) );
+        }
+    }
+
     @NotNull
     public byte[] encrypt( @NotNull final byte[] message ) throws IOException {
         return xorMessage( message, getKey() );
@@ -48,17 +59,6 @@ public final class XorUtil implements Cryptosystem {
         }
 
         return messageEncrypted;
-    }
-
-    private static void validateMessageLength(
-        @NotNull byte[] message, @NotNull byte[] key
-    ) {
-        if ( message.length > key.length ) {
-            throw new RuntimeException( String.format(
-                "Unsupported message length.  Message Length: %d, Supported Max Message Length: %d",
-                message.length, key.length
-            ) );
-        }
     }
 
     @NotNull
@@ -91,7 +91,7 @@ public final class XorUtil implements Cryptosystem {
 
     @NotNull
     private String getKeyFilename() {
-        return String.format("%s.%d", KEY_FILENAME, keySize );
+        return String.format( "%s.%d", KEY_FILENAME, keySize );
     }
 
     @NotNull

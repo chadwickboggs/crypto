@@ -94,10 +94,10 @@ public final class Main {
                         //
                         final List<byte[]> inputList = new ArrayList<>();
                         if ( isBase64Decode( cryptosystemName, options ) ) {
-                            inputList.addAll(Base64Util.decode( inputTextChunks( threadCount, inputStreamReader ) ));
+                            inputList.addAll( Base64Util.decode( inputTextChunks( threadCount, inputStreamReader ) ) );
                         }
                         else {
-                            inputList.addAll(inputBinaryChunks( chunkSize, threadCount, bufferedInputStream ));
+                            inputList.addAll( inputBinaryChunks( chunkSize, threadCount, bufferedInputStream ) );
                         }
 
                         didRead = validateInput( inputList, didRead );
@@ -110,7 +110,7 @@ public final class Main {
                         //
                         // 3. Output the processed chunks.
                         //
-                        if ( isBase64Encode( cryptosystemName, options )) {
+                        if ( isBase64Encode( cryptosystemName, options ) ) {
                             final List<String> encodedOutputList = Base64Util.encode( outputList );
                             writeTextOutputList( encodedOutputList, bufferedOutputStream );
                         }
@@ -166,10 +166,10 @@ public final class Main {
         @NotNull final String cryptosystemName, @NotNull final OptionSet options
     ) {
         if (
-            ( options.has( "e" ) || options.has( "encrypt" ) ) && (
+            (options.has( "e" ) || options.has( "encrypt" )) && (
                 options.has( "b" ) || options.has( "base64" ) ||
-                    cryptosystemName.equals(CryptosystemName.NTRU.name())
-        ) ) {
+                    cryptosystemName.equals( CryptosystemName.NTRU.name() )
+            ) ) {
             return true;
         }
 
@@ -180,10 +180,10 @@ public final class Main {
         @NotNull final String cryptosystemName, @NotNull final OptionSet options
     ) {
         if (
-            ( options.has( "d" ) || options.has( "decrypt" ) ) && (
+            (options.has( "d" ) || options.has( "decrypt" )) && (
                 options.has( "b" ) || options.has( "base64" ) ||
                     cryptosystemName.equals( CryptosystemName.NTRU.name() )
-        ) ) {
+            ) ) {
             return true;
         }
 
@@ -192,7 +192,9 @@ public final class Main {
 
     @NotNull
     public static String usageMessage() throws Exception {
-        try ( final InputStream inputStream = NtrUtil.class.getClassLoader().getResourceAsStream( USAGE_TXT_FILENAME ) ) {
+        try (
+            final InputStream inputStream = NtrUtil.class.getClassLoader().getResourceAsStream( USAGE_TXT_FILENAME )
+        ) {
             if ( inputStream == null ) {
                 exit( ExitCode.MISSING_RESOURCE.ordinal() );
 
