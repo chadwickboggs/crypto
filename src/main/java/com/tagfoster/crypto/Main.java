@@ -41,8 +41,9 @@ public final class Main {
 
     private static final String USAGE_TXT_FILENAME = "usage-cryptosystem.txt";
     private static final int DEFAULT_THREAD_COUNT = 2;
-    private static final int messageLength = 64;
+    private static final int DEFAULT_KEY_SIZE = 64;
     private static int threadCount = DEFAULT_THREAD_COUNT;
+    private static int messageLength = DEFAULT_KEY_SIZE;
     private volatile static BufferedReader bufferedReader;
 
     public static void main( @NotNull final String... args ) throws Exception {
@@ -60,6 +61,10 @@ public final class Main {
                 System.out.println( usageMessage() );
 
                 exit( ExitCode.SUCCESS.ordinal() );
+            }
+
+            if ( options.has( "k" ) || options.has( "key" ) ) {
+                messageLength = Integer.parseInt( options.valueOf( "k" ).toString() );
             }
 
             if ( !options.has( "c" ) && !options.has( "cryptosystem" ) ) {
@@ -392,13 +397,14 @@ public final class Main {
 
     @NotNull
     private static synchronized OptionParser getCliParser() {
-        final OptionParser parser = new OptionParser( "+c:?e?d?t:?x?h?u?" );
+        final OptionParser parser = new OptionParser( "+c:?e?d?k:?t:?x?h?u?" );
 
         parser.recognizeAlternativeLongOptions( true );
         parser.accepts( "cryptosystem" );
         parser.accepts( "encrypt" );
         parser.accepts( "decrypt" );
         parser.accepts( "rxjava" );
+        parser.accepts( "key" ).withRequiredArg().defaultsTo( String.valueOf( DEFAULT_KEY_SIZE ) );
         parser.accepts( "threads" ).withRequiredArg().defaultsTo( String.valueOf( DEFAULT_THREAD_COUNT ) );
         parser.accepts( "help" );
         parser.accepts( "usage" );

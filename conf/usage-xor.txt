@@ -18,6 +18,7 @@ NOTE: You may press CTRL-D twice to end the the input stream.
 	-e   | --encrypt        Encrypt from stdin to stdout.
 	-d   | --decrypt        Decrypt from stdin to stdout.
 	-t   | --threads        Use specified number of system threads [Default: 2].
+	-k   | --key            The byte length of the shared key to use [Default: 64].
 	-x   | --rxjava         Use the RxJava (Reactive eXtension).
 	-h   | --help           Display usage information.
 	-?   | -u | --usage     Display usage information.
