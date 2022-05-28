@@ -19,7 +19,7 @@ public final class Base64Util {
         return Base64.getDecoder().decode( text );
     }
 
-    public static String encodeBase64( @NotNull final byte[] text ) {
-        return new String( Base64.getEncoder().encode( text ) );
+    public static String encodeBase64( @NotNull final byte[] bytes ) {
+        return new String( Base64.getEncoder().encode( bytes ) );
     }
 }

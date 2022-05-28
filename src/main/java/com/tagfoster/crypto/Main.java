@@ -18,14 +18,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static com.tagfoster.crypto.Base64Util.decodeBase64;
 
 
 /**
@@ -44,7 +42,7 @@ public final class Main {
     private static final int DEFAULT_CHUNK_SIZE = 64;
     private static int threadCount = DEFAULT_THREAD_COUNT;
     private static int chunkSize = DEFAULT_CHUNK_SIZE;
-    private volatile static BufferedReader bufferedReader;
+    private static InputStreamReader inputStreamReader = null;
 
     public static void main( @NotNull final String... args ) throws Exception {
         if ( args.length == 0 ) {
@@ -84,19 +82,31 @@ public final class Main {
                 //
                 // 1. Input one threadCount sized list of chunks.
                 //
-                final List<byte[]> inputList = readInput( chunkSize, options );
+                List<byte[]> inputList;
+                if ( options.has( "d" ) || options.has( "decrypt" ) ) {
+                    inputList = Base64Util.decodeBase64( inputTextChunks( threadCount, System.in ) );
+                }
+                else {
+                    inputList = inputBinaryChunks( chunkSize, threadCount, System.in );
+                }
 
                 didRead = validateInput( inputList, didRead );
 
                 //
                 // 2. Process (encrypt/decrypt) the chunks.
                 //
-                final byte[][] outputs = processChunks( inputList, threadCount, cryptosystem, options );
+                List<byte[]> outputList = processChunks( inputList, threadCount, cryptosystem, options );
 
                 //
                 // 3. Output the processed chunks.
                 //
-                writeOutput( outputs, options );
+                if ( options.has( "e" ) || options.has( "encrypt" ) ) {
+                    outputList = outputList.stream()
+                        .map( Base64Util::encodeBase64 )
+                        .map( String::getBytes )
+                        .collect( Collectors.toList() );
+                }
+                writeOutput( outputList );
             }
         }
         catch ( final Throwable t ) {
@@ -156,12 +166,12 @@ public final class Main {
     }
 
     @NotNull
-    private static List<byte[]> inputBinary(
-        int chunkSize, @NotNull final InputStream inputStream
+    private static List<byte[]> inputBinaryChunks(
+        int chunkSize, int chunkCount, @NotNull final InputStream inputStream
     ) {
         final List<byte[]> cypherTexts = new ArrayList<>();
-        IntStream.rangeClosed( 0, chunkSize ).forEachOrdered( value -> {
-            byte[] input = inputBinary( inputStream );
+        IntStream.rangeClosed( 1, chunkCount ).forEachOrdered( count -> {
+            byte[] input = inputBinaryChunk( chunkSize, inputStream );
             if ( input.length > 0 ) {
                 cypherTexts.add( input );
             }
@@ -172,7 +182,7 @@ public final class Main {
 
 
     @NotNull
-    private static byte[] inputBinary( @NotNull final InputStream inputStream ) {
+    private static byte[] inputBinaryChunk( int chunkSize, @NotNull final InputStream inputStream ) {
         try ( final ByteArrayOutputStream outputStream = new ByteArrayOutputStream() ) {
             byte[] value = new byte[chunkSize];
             int numRead;
@@ -193,36 +203,46 @@ public final class Main {
 
 
     @NotNull
-    private static List<String> inputText(
-        int chunkSize, @NotNull final InputStream inputStream
+    private static List<String> inputTextChunks(
+        int chunkCount, @NotNull final InputStream inputStream
     ) {
         final List<String> cypherTexts = new ArrayList<>();
-        String cypherText;
-        do {
-            if ( cypherTexts.size() == chunkSize ) {
-                break;
+        IntStream.rangeClosed( 1, chunkCount ).forEachOrdered( count -> {
+            String cypherText = inputTextChunk( inputStream );
+            if ( cypherText.length() <= 0 ) {
+                return;
             }
 
-            cypherText = inputText( inputStream );
             if ( cypherText.length() > 0 ) {
                 cypherTexts.add( cypherText );
             }
-        }
-        while ( cypherText.length() > 0 );
+        } );
 
         return cypherTexts;
     }
 
     @NotNull
-    private static String inputText( @NotNull final InputStream inputStream ) {
+    private static String inputTextChunk( @NotNull final InputStream inputStream ) {
         final StringBuilder buf = new StringBuilder();
         try {
-            String line;
-            while ( true ) {
-                if ( (line = getBufferedReader( inputStream ).readLine()) == null ) break;
-                buf.append( line );
-                if ( line.endsWith( "==" ) ) break;
+            final InputStreamReader inputStreamReader = getInputStreamReader( inputStream );
+            char[] charBuf = new char[1];
+            int numCharsRead;
+            char lastChar = Character.MIN_VALUE;
+            do {
+                numCharsRead = inputStreamReader.read( charBuf );
+                if ( numCharsRead < 0 ) {
+                    break;
+                }
+                if ( numCharsRead > 0 ) {
+                    buf.append( charBuf );
+                    if ( charBuf[numCharsRead - 1] == '=' && lastChar == '=' ) {
+                        break;
+                    }
+                    lastChar = charBuf[numCharsRead - 1];
+                }
             }
+            while ( true );
         }
         catch ( IOException e ) {
             throw new RuntimeException( e );
@@ -232,12 +252,12 @@ public final class Main {
     }
 
     @NotNull
-    private synchronized static BufferedReader getBufferedReader( @NotNull final InputStream inputStream ) {
-        if ( bufferedReader == null ) {
-            bufferedReader = new BufferedReader( new InputStreamReader( inputStream ) );
+    private static synchronized InputStreamReader getInputStreamReader( @NotNull InputStream inputStream ) {
+        if ( inputStreamReader == null ) {
+            inputStreamReader = new InputStreamReader( inputStream );
         }
 
-        return bufferedReader;
+        return inputStreamReader;
     }
 
     @NotNull
@@ -269,33 +289,14 @@ public final class Main {
         return false;
     }
 
-    private static List<byte[]> readInput(
-        int chunkSize, @NotNull final OptionSet options
-    ) {
-        if ( options.has( "e" ) || options.has( "encrypt" ) ) {
-            return inputBinary( chunkSize, System.in );
-        }
-
-        return decodeBase64( inputText( chunkSize, System.in ) );
-    }
-
-    private static void writeOutput(
-        @NotNull final byte[][] outputs, @NotNull final OptionSet options
-    ) {
-        if ( options.has( "e" ) || options.has( "encrypt" ) ) {
-            Arrays.stream( outputs ).toList().stream()
-                .map( Base64Util::encodeBase64 )
-                .forEachOrdered( System.out::println );
-        }
-        else {
-            Arrays.stream( outputs ).toList().stream()
-                .map( String::new )
-                .forEachOrdered( System.out::print );
-        }
+    private static void writeOutput( @NotNull final List<byte[]> outputList ) {
+        outputList.stream()
+            .map( String::new )
+            .forEachOrdered( System.out::print );
     }
 
     @NotNull
-    private static byte[][] processChunks(
+    private static List<byte[]> processChunks(
         @NotNull final List<byte[]> inputList,
         int threadCount,
         @NotNull final Cryptosystem cryptosystem,
@@ -309,13 +310,13 @@ public final class Main {
     }
 
     @NotNull
-    private static byte[][] processChunksConcurrently(
+    private static List<byte[]> processChunksConcurrently(
         @NonNull final List<byte[]> inputList,
         int threadCount,
         @NonNull final Cryptosystem cryptosystem,
         @NonNull final OptionSet options
     ) throws InterruptedException {
-        final byte[][] outputs = new byte[inputList.size()][];
+        final List<byte[]> outputs = new ArrayList<>( inputList.size() );
 
         try ( final ExecutorService executorService = Executors.newFixedThreadPool( threadCount ) ) {
             for ( int i = 0; i < inputList.size(); i++ ) {
@@ -324,12 +325,12 @@ public final class Main {
 
                 if ( options.has( "e" ) || options.has( "encrypt" ) ) {
                     executorService.submit( () ->
-                        outputs[index] = cryptosystem.encrypt( inputs.get( index ) )
+                        outputs.add( cryptosystem.encrypt( inputs.get( index ) ) )
                     );
                 }
                 else if ( options.has( "d" ) || options.has( "decrypt" ) ) {
                     executorService.submit( () ->
-                        outputs[index] = cryptosystem.decrypt( inputs.get( index ) )
+                        outputs.add( cryptosystem.decrypt( inputs.get( index ) ) )
                     );
                 }
             }
@@ -344,13 +345,13 @@ public final class Main {
     }
 
     @NotNull
-    private static byte[][] processChunksConcurrentlyUsingRxJava(
+    private static List<byte[]> processChunksConcurrentlyUsingRxJava(
         @NonNull final List<byte[]> inputList,
         int threadCount,
         @NonNull final Cryptosystem cryptosystem,
         @NonNull final OptionSet options
     ) throws InterruptedException {
-        final byte[][] outputs = new byte[inputList.size()][];
+        final List<byte[]> outputs = new ArrayList<>( inputList.size() );
 
         try ( final ExecutorService executorService = Executors.newFixedThreadPool( threadCount ) ) {
             final ExecutorScheduler executorScheduler = new ExecutorScheduler(
@@ -364,7 +365,7 @@ public final class Main {
                 if ( options.has( "e" ) || options.has( "encrypt" ) ) {
                     executorScheduler.scheduleDirect( () -> {
                         try {
-                            outputs[index] = cryptosystem.encrypt( inputs.get( index ) );
+                            outputs.add( cryptosystem.encrypt( inputs.get( index ) ) );
                         }
                         catch ( IOException e ) {
                             exit( e );
@@ -374,7 +375,7 @@ public final class Main {
                 else if ( options.has( "d" ) || options.has( "decrypt" ) ) {
                     executorScheduler.scheduleDirect( () -> {
                         try {
-                            outputs[index] = cryptosystem.decrypt( inputs.get( index ) );
+                            outputs.add( cryptosystem.decrypt( inputs.get( index ) ) );
                         }
                         catch ( IOException e ) {
                             exit( e );

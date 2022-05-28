@@ -12,7 +12,7 @@ xorutil_home="$(dirname ${0})"/..
 xorutil_homeutil_conf="${xorutil_home}"/conf
 xorutil_homeutil_dist="${xorutil_home}"/dist
 xorutil_homeutil_lib="${xorutil_home}"/lib
-xorutil_homeutil_out="${xorutil_home}"/out/production/ntrutil
+xorutil_homeutil_out="${xorutil_home}"/out/production/crypto
 
 xorutil_homeutil_dist_escaped="$(/bin/echo "${xorutil_homeutil_dist}" | /usr/bin/sed 's/\//\\\//g')"
 xorutil_homeutil_lib_escaped="$(/bin/echo "${xorutil_homeutil_lib}" | /usr/bin/sed 's/\//\\\//g')"

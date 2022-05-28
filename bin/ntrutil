@@ -12,7 +12,7 @@ ntrutil_home="$(dirname ${0})"/..
 ntrutil_conf="${ntrutil_home}"/conf
 ntrutil_dist="${ntrutil_home}"/dist
 ntrutil_lib="${ntrutil_home}"/lib
-ntrutil_out="${ntrutil_home}"/out/production/ntrutil
+ntrutil_out="${ntrutil_home}"/out/production/crypto
 
 ntrutil_dist_escaped="$(/bin/echo "${ntrutil_dist}" | /usr/bin/sed 's/\//\\\//g')"
 ntrutil_lib_escaped="$(/bin/echo "${ntrutil_lib}" | /usr/bin/sed 's/\//\\\//g')"
