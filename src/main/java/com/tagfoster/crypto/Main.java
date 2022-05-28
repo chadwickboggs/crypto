@@ -10,23 +10,21 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 
@@ -46,7 +44,9 @@ public final class Main {
     private static final int DEFAULT_CHUNK_SIZE = 64;
     private static int threadCount = DEFAULT_THREAD_COUNT;
     private static int chunkSize = DEFAULT_CHUNK_SIZE;
-    private static InputStreamReader inputStreamReader = null;
+    private static volatile InputStreamReader inputStreamReader = null;
+    private static volatile BufferedInputStream bufferedInputStream = null;
+    private static volatile BufferedOutputStream bufferedOutputStream = null;
 
     public static void main( @NotNull final String... args ) throws Exception {
         if ( args.length == 0 ) {
@@ -85,12 +85,14 @@ public final class Main {
                 //
                 // 1. Input one threadCount sized list of chunks.
                 //
-                List<byte[]> inputList;
+                final List<byte[]> inputList = new ArrayList<>();
                 if ( isBase64Decode( cryptosystemName, options ) ) {
-                    inputList = Base64Util.decode( inputTextChunks( threadCount, System.in ) );
+                    final InputStreamReader inputStreamReader = getInputStreamReader( System.in );
+                    inputList.addAll(Base64Util.decode( inputTextChunks( threadCount, inputStreamReader ) ));
                 }
                 else {
-                    inputList = inputBinaryChunks( chunkSize, threadCount, System.in );
+                    final BufferedInputStream bufferedInputStream = getBufferedInputStream( System.in );
+                    inputList.addAll(inputBinaryChunks( chunkSize, threadCount, bufferedInputStream ));
                 }
 
                 didRead = validateInput( inputList, didRead );
@@ -103,15 +105,17 @@ public final class Main {
                 //
                 // 3. Output the processed chunks.
                 //
+                final BufferedOutputStream bufferedOutputStream = getBufferedOutputStream( System.out );
                 if ( isBase64Encode( cryptosystemName, options )) {
-                    Base64Util.encode( outputList ).stream()
-                        .forEachOrdered( System.out::print );
+                    final List<String> encodedOutputList = Base64Util.encode( outputList );
+                    writeTextOutputList( encodedOutputList, System.out );
                 }
                 else {
-                    outputList.stream()
-                        .map( String::new )
-                        .forEachOrdered( System.out::print );
+                    writeOutputList( outputList, System.out );
                 }
+
+                bufferedOutputStream.flush();
+                inputList.clear();
             }
         }
         catch ( final Throwable t ) {
@@ -121,11 +125,40 @@ public final class Main {
         exit( ExitCode.SUCCESS.ordinal() );
     }
 
+    private static void writeTextOutputList(
+        @NotNull final List<String> outputList,
+        @NotNull final OutputStream outputStream
+    ) throws IOException {
+        outputList.forEach( text -> writeTextOutput( text, outputStream ) );
+    }
+
+    private static void writeOutputList(
+        @NotNull final List<byte[]> outputList,
+        @NotNull final OutputStream outputStream
+    ) throws IOException {
+        outputList.forEach( bytes -> writeOutput( bytes, outputStream ) );
+    }
+
+    private static void writeTextOutput(
+        @NotNull final String text, @NotNull final OutputStream outputStream
+    ) {
+        writeOutput( text.getBytes(), outputStream );
+    }
+
+    private static void writeOutput(
+        @NotNull final byte[] bytes, @NotNull final OutputStream outputStream
+    ) {
+        try {
+            outputStream.write( bytes );
+        }
+        catch ( IOException e ) {
+            exit( e );
+        }
+    }
+
     private static boolean isBase64Encode(
         @NotNull final String cryptosystemName, @NotNull final OptionSet options
     ) {
-        return options.has( "e" ) || options.has( "encrypt" );
-/*
         if (
             ( options.has( "e" ) || options.has( "encrypt" ) ) && (
                 options.has( "b" ) || options.has( "base64" ) ||
@@ -135,14 +168,11 @@ public final class Main {
         }
 
         return false;
-*/
     }
 
     private static boolean isBase64Decode(
         @NotNull final String cryptosystemName, @NotNull final OptionSet options
     ) {
-        return options.has( "d" ) || options.has( "decrypt" );
-/*
         if (
             ( options.has( "d" ) || options.has( "decrypt" ) ) && (
                 options.has( "b" ) || options.has( "base64" ) ||
@@ -152,7 +182,6 @@ public final class Main {
         }
 
         return false;
-*/
     }
 
     @NotNull
@@ -243,11 +272,11 @@ public final class Main {
 
     @NotNull
     private static List<String> inputTextChunks(
-        int chunkCount, @NotNull final InputStream inputStream
+        int chunkCount, @NotNull final InputStreamReader inputStreamReader
     ) {
         final List<String> cypherTexts = new ArrayList<>();
         IntStream.rangeClosed( 1, chunkCount ).forEachOrdered( count -> {
-            String cypherText = inputTextChunk( inputStream );
+            String cypherText = inputTextChunk( inputStreamReader );
             if ( cypherText.length() <= 0 ) {
                 return;
             }
@@ -261,10 +290,9 @@ public final class Main {
     }
 
     @NotNull
-    private static String inputTextChunk( @NotNull final InputStream inputStream ) {
+    private static String inputTextChunk( @NotNull final InputStreamReader inputStreamReader ) {
         final StringBuilder buf = new StringBuilder();
         try {
-            final InputStreamReader inputStreamReader = getInputStreamReader( inputStream );
             char[] charBuf = new char[1];
             int numCharsRead;
             char lastChar = Character.MIN_VALUE;
@@ -297,6 +325,27 @@ public final class Main {
         }
 
         return inputStreamReader;
+    }
+
+    private static synchronized BufferedInputStream getBufferedInputStream(
+        @NotNull final InputStream inputStream
+    ) {
+        if ( bufferedInputStream == null ) {
+            bufferedInputStream = new BufferedInputStream( inputStream );
+        }
+
+        return bufferedInputStream;
+    }
+
+    @NotNull
+    private static synchronized BufferedOutputStream getBufferedOutputStream(
+        @NotNull final OutputStream outputStream
+    ) {
+        if ( bufferedOutputStream == null ) {
+            bufferedOutputStream = new BufferedOutputStream( outputStream );
+        }
+
+        return bufferedOutputStream;
     }
 
     @NotNull

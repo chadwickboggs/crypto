@@ -20,7 +20,8 @@ NOTE: You may press CTRL-D twice to end the the input stream.
 	-c   | --cryptosystem   Cryptosystem to use [Default: NTRU].
 	-e   | --encrypt        Encrypt from stdin to stdout.
 	-d   | --decrypt        Decrypt from stdin to stdout.
-	-b   | --base64         Base64 encode encryption output or Base64 decode decryption input.
+	-b   | --base64         Base64 encode encryption output or Base64 decode decryption input
+	                        [Default: on if NTRU, otherwise off].
 	-t   | --threads        Use specified number of system threads [Default: 2].
 	-x   | --rxjava         Use the RxJava (Reactive eXtension).
 	-h   | --help           Display usage information.
