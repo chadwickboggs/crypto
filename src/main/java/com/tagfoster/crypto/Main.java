@@ -81,41 +81,47 @@ public final class Main {
 
             boolean didRead = false;
 
-            while ( true ) {
-                //
-                // 1. Input one threadCount sized list of chunks.
-                //
-                final List<byte[]> inputList = new ArrayList<>();
-                if ( isBase64Decode( cryptosystemName, options ) ) {
-                    final InputStreamReader inputStreamReader = getInputStreamReader( System.in );
-                    inputList.addAll(Base64Util.decode( inputTextChunks( threadCount, inputStreamReader ) ));
-                }
-                else {
-                    final BufferedInputStream bufferedInputStream = getBufferedInputStream( System.in );
-                    inputList.addAll(inputBinaryChunks( chunkSize, threadCount, bufferedInputStream ));
-                }
 
-                didRead = validateInput( inputList, didRead );
+            ;
+            try (
+                final InputStreamReader inputStreamReader = getInputStreamReader( System.in );
+                final BufferedInputStream bufferedInputStream = getBufferedInputStream( System.in )
+            ) {
+                try ( final BufferedOutputStream bufferedOutputStream = getBufferedOutputStream( System.out ) ) {
+                    while ( true ) {
+                        //
+                        // 1. Input one threadCount sized list of chunks.
+                        //
+                        final List<byte[]> inputList = new ArrayList<>();
+                        if ( isBase64Decode( cryptosystemName, options ) ) {
+                            inputList.addAll(Base64Util.decode( inputTextChunks( threadCount, inputStreamReader ) ));
+                        }
+                        else {
+                            inputList.addAll(inputBinaryChunks( chunkSize, threadCount, bufferedInputStream ));
+                        }
 
-                //
-                // 2. Process (encrypt/decrypt) the chunks.
-                //
-                List<byte[]> outputList = processChunks( inputList, threadCount, cryptosystem, options );
+                        didRead = validateInput( inputList, didRead );
 
-                //
-                // 3. Output the processed chunks.
-                //
-                final BufferedOutputStream bufferedOutputStream = getBufferedOutputStream( System.out );
-                if ( isBase64Encode( cryptosystemName, options )) {
-                    final List<String> encodedOutputList = Base64Util.encode( outputList );
-                    writeTextOutputList( encodedOutputList, System.out );
+                        //
+                        // 2. Process (encrypt/decrypt) the chunks.
+                        //
+                        List<byte[]> outputList = processChunks( inputList, threadCount, cryptosystem, options );
+
+                        //
+                        // 3. Output the processed chunks.
+                        //
+                        if ( isBase64Encode( cryptosystemName, options )) {
+                            final List<String> encodedOutputList = Base64Util.encode( outputList );
+                            writeTextOutputList( encodedOutputList, bufferedOutputStream );
+                        }
+                        else {
+                            writeOutputList( outputList, bufferedOutputStream );
+                        }
+
+                        bufferedOutputStream.flush();
+                        inputList.clear();
+                    }
                 }
-                else {
-                    writeOutputList( outputList, System.out );
-                }
-
-                bufferedOutputStream.flush();
-                inputList.clear();
             }
         }
         catch ( final Throwable t ) {
