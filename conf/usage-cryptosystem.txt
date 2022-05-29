@@ -4,7 +4,7 @@ DESCRIPTION:
     Encrypts or decrypts using the specidied cryptosystem.  Input gets read
     from STDIN.  Output gets written to STDOUT.
 
-    Presently Supported Cryptosystems: XOR, NTRU
+    Presently Supported Cryptosystems: NOOP, XOR, NTRU
 
     XOR is a single/shared key cryptosystem.  NTRU is a two key, public key,
     private cryptosystem.

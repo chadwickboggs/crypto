@@ -11,6 +11,8 @@ Please read usage.txt which you will find within the conf folder.
 
 ## Usage Examples
 
+    `$ echo 'Hello, World!' | bin/crypto -c XOR -e | bin/crypto -c XOR -d`
+
     `$ wc -l lorem_ipsum_100.txt`
 
     `$ cat lorem_ipsum_100.txt | bin/crypto -c XOR -e | bin/crypto -c XOR -d | wc -l`

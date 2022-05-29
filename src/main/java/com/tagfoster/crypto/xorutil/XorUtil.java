@@ -12,8 +12,8 @@ import java.security.SecureRandom;
 
 
 /**
- * This class implements NTRU encryption/decryption.  It store its NTRU
- * encryption parameters and keys in the "~/.ntrutil" folder.
+ * This class implements XOR encryption/decryption.  It store its XOR
+ * encryption parameters and keys in the "~/.xorutil" folder.
  */
 public final class XorUtil implements Cryptosystem {
 
@@ -45,8 +45,8 @@ public final class XorUtil implements Cryptosystem {
     }
 
     @NotNull
-    public byte[] decrypt( @NotNull final byte[] message ) throws IOException {
-        return xorMessage( message, getKey() );
+    public byte[] decrypt( @NotNull final byte[] bytes ) throws IOException {
+        return xorMessage( bytes, getKey() );
     }
 
     @NotNull

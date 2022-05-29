@@ -1,0 +1,53 @@
+#!/bin/bash
+
+#JAVA_OPTS="${JAVA_OPTS} --source 19"
+#JAVA_OPTS="${JAVA_OPTS} --enable-preview"
+
+if [ "-g" == "${1}" ]; then
+    JAVA_OPTS="${JAVA_OPTS} -Xdebug -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
+    shift 1
+fi
+
+nooputil_home="$(dirname ${0})"/..
+nooputil_homeutil_conf="${nooputil_home}"/conf
+nooputil_homeutil_dist="${nooputil_home}"/dist
+nooputil_homeutil_lib="${nooputil_home}"/lib
+nooputil_homeutil_out="${nooputil_home}"/out/production/crypto
+
+nooputil_homeutil_dist_escaped="$(/bin/echo "${nooputil_homeutil_dist}" | /usr/bin/sed 's/\//\\\//g')"
+nooputil_homeutil_lib_escaped="$(/bin/echo "${nooputil_homeutil_lib}" | /usr/bin/sed 's/\//\\\//g')"
+
+#
+# Add distribution to classpath.
+#
+
+dists="${nooputil_homeutil_dist}/$(/bin/ls "${nooputil_homeutil_dist}" | /usr/bin/tr '\n' ':')"
+dists="$(/bin/echo ${dists} | /usr/bin/sed "s/:/:${nooputil_homeutil_dist_escaped}\//g")"
+
+#
+# Add all library dependencies to classpath.
+#
+
+libs="${nooputil_homeutil_lib}/$(/bin/ls "${nooputil_homeutil_lib}" | /usr/bin/tr '\n' ':')"
+cp="${dists}:$(/bin/echo ${libs} | /usr/bin/sed "s/:/:${nooputil_homeutil_lib_escaped}\//g")"
+cp="${nooputil_homeutil_out}:${cp}"
+
+#
+# Prepend configuration folder to classpath.
+#
+
+cp="${nooputil_homeutil_conf}:${cp}"
+
+#
+# Prepend development output folder to classpath.
+#
+
+#cp="${xorutil_home}/out/production/NtrUtil:${cp}"
+
+#
+# Execute the application.
+#
+
+java ${JAVA_OPTS} -cp "${cp}" com.tagfoster.crypto.nooputil.Main $@
+
+exit $?

@@ -1,5 +1,6 @@
 package com.tagfoster.crypto;
 
+import com.tagfoster.crypto.nooputil.NoopUtil;
 import com.tagfoster.crypto.ntrutil.NtrUtil;
 import com.tagfoster.crypto.xorutil.XorUtil;
 import io.reactivex.rxjava3.annotations.NonNull;
@@ -32,7 +33,7 @@ import java.util.stream.IntStream;
  * This class implements command-line access to encryption/decryption.  The
  * cryptosystem it should used must be specified as a command line parameter.
  * <br>
- * Presently Supported Cryptosystems: XOR, NTRU
+ * Presently Supported Cryptosystems: NOOP, XOR, NTRU
  * <br>
  * Input gets read from stdin.  Output gets written to stdout.  Encryption
  * output is Base64 encoded.  Decryption input is assumed to be Base64 encoded.
@@ -362,6 +363,7 @@ public final class Main {
     ) {
         Cryptosystem cryptosystem = null;
         switch ( CryptosystemName.valueOf( cryptosystemName ) ) {
+            case NOOP -> cryptosystem = new NoopUtil();
             case XOR -> cryptosystem = new XorUtil( keySize );
             case NTRU -> cryptosystem = new NtrUtil( keySize );
             default -> exit( ExitCode.UNRECOGNIZED_ARGUMENT_VALUE.ordinal() );
@@ -509,7 +511,7 @@ public final class Main {
 
 
     public enum CryptosystemName {
-        XOR, NTRU
+        NOOP, XOR, NTRU
     }
 
 

@@ -40,8 +40,8 @@ public final class NtrUtil implements Cryptosystem {
     }
 
     @NotNull
-    public byte[] decrypt( @NotNull final byte[] message ) throws IOException {
-        return getNTRU().decrypt( message, getKeyPair() );
+    public byte[] decrypt( @NotNull final byte[] bytes ) throws IOException {
+        return getNTRU().decrypt( bytes, getKeyPair() );
     }
 
 
