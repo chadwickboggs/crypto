@@ -45,7 +45,7 @@ import java.util.stream.IntStream;
 public final class Main {
 
     private static final String USAGE_TXT_FILENAME = "usage-cryptosystem.txt";
-    private static final int DEFAULT_THREAD_COUNT = 2;
+    private static final int DEFAULT_THREAD_COUNT = 1;
     private static final int DEFAULT_CHUNK_SIZE = 64;
     private static int threadCount = DEFAULT_THREAD_COUNT;
     private static int chunkSize = DEFAULT_CHUNK_SIZE;
