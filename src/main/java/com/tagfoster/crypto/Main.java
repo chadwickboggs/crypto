@@ -135,14 +135,14 @@ public final class Main {
     private static void writeTextOutputList(
         @NotNull final List<String> outputList,
         @NotNull final OutputStream outputStream
-    ) throws IOException {
+    ) {
         outputList.forEach( text -> writeTextOutput( text, outputStream ) );
     }
 
     private static void writeOutputList(
         @NotNull final List<byte[]> outputList,
         @NotNull final OutputStream outputStream
-    ) throws IOException {
+    ) {
         outputList.forEach( bytes -> writeOutput( bytes, outputStream ) );
     }
 
@@ -261,15 +261,20 @@ public final class Main {
     @NotNull
     private static byte[] inputBinaryChunk( int chunkSize, @NotNull final InputStream inputStream ) {
         try ( final ByteArrayOutputStream outputStream = new ByteArrayOutputStream() ) {
-            byte[] value = new byte[chunkSize];
-            int numRead;
-            while ( (numRead = inputStream.read( value )) == 0 ) ;
-            if ( numRead < 0 ) {
-                return outputStream.toByteArray();
-            }
+            int totalRead = 0;
+            do {
+                byte[] value = new byte[chunkSize - totalRead];
+                int numRead = inputStream.read( value );
+                if ( numRead < 0 ) {
+                    return outputStream.toByteArray();
+                }
 
-            outputStream.write( value, 0, numRead );
-            outputStream.flush();
+                totalRead += numRead;
+
+                outputStream.write( value, 0, numRead );
+                outputStream.flush();
+            }
+            while ( totalRead < chunkSize );
 
             return outputStream.toByteArray();
         }
