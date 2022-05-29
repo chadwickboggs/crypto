@@ -87,8 +87,6 @@ public final class Main {
 
             boolean didRead = false;
 
-
-            ;
             try (
                 final BufferedInputStream bufferedInputStream = getBufferedInputStream( System.in );
                 final InputStreamReader inputStreamReader = getInputStreamReader( bufferedInputStream )
@@ -443,7 +441,7 @@ public final class Main {
         @NonNull final Cryptosystem cryptosystem,
         @NonNull final OptionSet options
     ) throws InterruptedException {
-        final List<byte[]> outputs = new ArrayList<>( inputList.size() );
+        final byte[][] outputs = new byte[ inputList.size() ][];
 
         try ( final ExecutorService executorService = Executors.newFixedThreadPool( threadCount ) ) {
             IntStream.range( 0, inputList.size() ).forEachOrdered( i -> {
@@ -451,12 +449,12 @@ public final class Main {
                 final int index = i;
                 if ( options.has( "e" ) || options.has( "encrypt" ) ) {
                     executorService.submit( () ->
-                        outputs.add( cryptosystem.encrypt( inputs.get( index ) ) )
+                        outputs[index] = cryptosystem.encrypt( inputs.get( index ) )
                     );
                 }
                 else if ( options.has( "d" ) || options.has( "decrypt" ) ) {
                     executorService.submit( () ->
-                        outputs.add( cryptosystem.decrypt( inputs.get( index ) ) )
+                        outputs[index] = cryptosystem.decrypt( inputs.get( index ) )
                     );
                 }
             } );
@@ -467,7 +465,7 @@ public final class Main {
             }
         }
 
-        return outputs;
+        return Arrays.asList(outputs);
     }
 
     @NotNull
@@ -477,7 +475,7 @@ public final class Main {
         @NonNull final Cryptosystem cryptosystem,
         @NonNull final OptionSet options
     ) throws InterruptedException {
-        final List<byte[]> outputs = new ArrayList<>( inputList.size() );
+        final byte[][] outputs = new byte[ inputList.size() ][];
 
         try ( final ExecutorService executorService = Executors.newFixedThreadPool( threadCount ) ) {
             final ExecutorScheduler executorScheduler = new ExecutorScheduler(
@@ -490,7 +488,7 @@ public final class Main {
                 if ( options.has( "e" ) || options.has( "encrypt" ) ) {
                     executorScheduler.scheduleDirect( () -> {
                         try {
-                            outputs.add( cryptosystem.encrypt( inputs.get( index ) ) );
+                            outputs[index] = cryptosystem.encrypt( inputs.get( index ) );
                         }
                         catch ( IOException e ) {
                             exit( e );
@@ -500,7 +498,7 @@ public final class Main {
                 else if ( options.has( "d" ) || options.has( "decrypt" ) ) {
                     executorScheduler.scheduleDirect( () -> {
                         try {
-                            outputs.add( cryptosystem.decrypt( inputs.get( index ) ) );
+                            outputs[index] = cryptosystem.decrypt( inputs.get( index ) );
                         }
                         catch ( IOException e ) {
                             exit( e );
@@ -521,7 +519,7 @@ public final class Main {
             }
         }
 
-        return outputs;
+        return Arrays.asList(outputs);
     }
 
     @NotNull
