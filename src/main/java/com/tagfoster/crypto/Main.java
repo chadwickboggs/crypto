@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,9 +46,10 @@ public final class Main {
     private static final int DEFAULT_CHUNK_SIZE = 64;
     private static int threadCount = DEFAULT_THREAD_COUNT;
     private static int chunkSize = DEFAULT_CHUNK_SIZE;
-    private static volatile InputStreamReader inputStreamReader = null;
     private static volatile BufferedInputStream bufferedInputStream = null;
+    private static volatile InputStreamReader inputStreamReader = null;
     private static volatile BufferedOutputStream bufferedOutputStream = null;
+    private static volatile OutputStreamWriter outputStreamWriter = null;
 
     public static void main( @NotNull final String... args ) throws Exception {
         if ( args.length == 0 ) {
@@ -85,10 +87,13 @@ public final class Main {
 
             ;
             try (
-                final InputStreamReader inputStreamReader = getInputStreamReader( System.in );
-                final BufferedInputStream bufferedInputStream = getBufferedInputStream( System.in )
+                final BufferedInputStream bufferedInputStream = getBufferedInputStream( System.in );
+                final InputStreamReader inputStreamReader = getInputStreamReader( bufferedInputStream )
             ) {
-                try ( final BufferedOutputStream bufferedOutputStream = getBufferedOutputStream( System.out ) ) {
+                try (
+                    final BufferedOutputStream bufferedOutputStream = getBufferedOutputStream( System.out );
+                    final OutputStreamWriter outputStreamWriter = getOutputStreamWriter( bufferedOutputStream )
+                ) {
                     while ( true ) {
                         //
                         // 1. Input one threadCount sized list of chunks.
@@ -113,12 +118,13 @@ public final class Main {
                         //
                         if ( isBase64Encode( cryptosystemName, options ) ) {
                             final List<String> encodedOutputList = Base64Util.encode( outputList );
-                            writeTextOutputList( encodedOutputList, bufferedOutputStream );
+                            writeTextOutputList( encodedOutputList, outputStreamWriter );
                         }
                         else {
                             writeOutputList( outputList, bufferedOutputStream );
                         }
 
+                        outputStreamWriter.flush();
                         bufferedOutputStream.flush();
                         inputList.clear();
                     }
@@ -134,9 +140,9 @@ public final class Main {
 
     private static void writeTextOutputList(
         @NotNull final List<String> outputList,
-        @NotNull final OutputStream outputStream
+        @NotNull final OutputStreamWriter outputStreamWriter
     ) {
-        outputList.forEach( text -> writeTextOutput( text, outputStream ) );
+        outputList.forEach( text -> writeTextOutput( text, outputStreamWriter ) );
     }
 
     private static void writeOutputList(
@@ -147,9 +153,14 @@ public final class Main {
     }
 
     private static void writeTextOutput(
-        @NotNull final String text, @NotNull final OutputStream outputStream
+        @NotNull final String text, @NotNull final OutputStreamWriter outputStreamWriter
     ) {
-        writeOutput( text.getBytes(), outputStream );
+        try {
+            outputStreamWriter.write( text );
+        }
+        catch ( IOException e ) {
+            exit( e );
+        }
     }
 
     private static void writeOutput(
@@ -335,7 +346,7 @@ public final class Main {
     @NotNull
     private static synchronized InputStreamReader getInputStreamReader( @NotNull InputStream inputStream ) {
         if ( inputStreamReader == null ) {
-            inputStreamReader = new InputStreamReader( inputStream );
+            inputStreamReader = new InputStreamReader( getBufferedInputStream( inputStream ) );
         }
 
         return inputStreamReader;
@@ -349,6 +360,17 @@ public final class Main {
         }
 
         return bufferedInputStream;
+    }
+
+    @NotNull
+    private static synchronized OutputStreamWriter getOutputStreamWriter(
+        @NotNull final OutputStream outputStream
+    ) {
+        if (outputStreamWriter == null) {
+            outputStreamWriter = new OutputStreamWriter( getBufferedOutputStream( outputStream ) );
+        }
+
+        return outputStreamWriter;
     }
 
     @NotNull
