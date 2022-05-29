@@ -2,6 +2,7 @@ package com.tagfoster.crypto;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,6 +27,6 @@ public final class Base64Util {
 
     @NotNull
     public static String encode( @NotNull final byte[] bytes ) {
-        return new String( Base64.getEncoder().encode( bytes ) );
+        return new String( Base64.getEncoder().encode( bytes ), StandardCharsets.UTF_8 );
     }
 }

@@ -22,6 +22,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
+import java.nio.CharBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -327,7 +329,10 @@ public final class Main {
                     break;
                 }
                 if ( numCharsRead > 0 ) {
-                    buf.append( charBuf );
+                    buf.append( new String(
+                        StandardCharsets.UTF_8.encode( CharBuffer.wrap( charBuf ) ).array(),
+                        StandardCharsets.UTF_8
+                    ) );
                     if ( charBuf[numCharsRead - 1] == '=' && lastChar == '=' ) {
                         break;
                     }
@@ -366,7 +371,7 @@ public final class Main {
     private static synchronized OutputStreamWriter getOutputStreamWriter(
         @NotNull final OutputStream outputStream
     ) {
-        if (outputStreamWriter == null) {
+        if ( outputStreamWriter == null ) {
             outputStreamWriter = new OutputStreamWriter( getBufferedOutputStream( outputStream ) );
         }
 
