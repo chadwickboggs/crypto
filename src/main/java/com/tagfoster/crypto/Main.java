@@ -25,6 +25,7 @@ import java.io.StringWriter;
 import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -324,20 +325,22 @@ public final class Main {
             int numCharsRead;
             char lastChar = Character.MIN_VALUE;
             do {
-                numCharsRead = inputStreamReader.read( charBuf );
+                while ( ( numCharsRead = inputStreamReader.read( charBuf ) ) == 0 ) {}
                 if ( numCharsRead < 0 ) {
                     break;
                 }
-                if ( numCharsRead > 0 ) {
-                    buf.append( new String(
-                        StandardCharsets.UTF_8.encode( CharBuffer.wrap( charBuf ) ).array(),
-                        StandardCharsets.UTF_8
-                    ) );
-                    if ( charBuf[numCharsRead - 1] == '=' && lastChar == '=' ) {
-                        break;
-                    }
-                    lastChar = charBuf[numCharsRead - 1];
+
+                final CharBuffer charBuffer = CharBuffer.wrap( Arrays.copyOf( charBuf, numCharsRead ) );
+                buf.append( new String(
+                    StandardCharsets.UTF_8.encode( charBuffer ).array(),
+                    StandardCharsets.UTF_8
+                ) );
+
+                char currentChar = charBuf[numCharsRead - 1];
+                if ( currentChar == '=' && lastChar == '=' ) {
+                    break;
                 }
+                lastChar = currentChar;
             }
             while ( true );
         }
@@ -443,10 +446,9 @@ public final class Main {
         final List<byte[]> outputs = new ArrayList<>( inputList.size() );
 
         try ( final ExecutorService executorService = Executors.newFixedThreadPool( threadCount ) ) {
-            for ( int i = 0; i < inputList.size(); i++ ) {
+            IntStream.range( 0, inputList.size() ).forEachOrdered( i -> {
                 final List<byte[]> inputs = new ArrayList<>( inputList );
                 final int index = i;
-
                 if ( options.has( "e" ) || options.has( "encrypt" ) ) {
                     executorService.submit( () ->
                         outputs.add( cryptosystem.encrypt( inputs.get( index ) ) )
@@ -457,7 +459,7 @@ public final class Main {
                         outputs.add( cryptosystem.decrypt( inputs.get( index ) ) )
                     );
                 }
-            }
+            } );
 
             executorService.shutdown();
             if ( !executorService.awaitTermination( Long.MAX_VALUE, TimeUnit.MILLISECONDS ) ) {
@@ -482,10 +484,9 @@ public final class Main {
                 executorService, false, true
             );
 
-            for ( int i = 0; i < inputList.size(); i++ ) {
+            IntStream.range( 0, inputList.size() ).forEachOrdered( i -> {
                 final List<byte[]> inputs = new ArrayList<>( inputList );
                 final int index = i;
-
                 if ( options.has( "e" ) || options.has( "encrypt" ) ) {
                     executorScheduler.scheduleDirect( () -> {
                         try {
@@ -506,7 +507,7 @@ public final class Main {
                         }
                     } );
                 }
-            }
+            } );
 
             final Scheduler.Worker worker = executorScheduler.createWorker();
             final Single<Scheduler.Worker> single = Single.just( worker );
