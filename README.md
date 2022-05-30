@@ -1,10 +1,17 @@
 ## Introduction
-NtrUtil may be used as a library to encrypt/decrypt input streams or called as
-a command line tool reading from stdin writing to stdout.
+Crypto may be used as a library to encrypt/decrypt data or called as a command
+line tool that read its input from stdin and writes its output to stdout.
 
-## Library Usage
-Class com.tagfoster.crypto.ntrutil.NtrUtil's encrypt(...) and decrypt(...) methods may
-be called.
+## Library Methods
+* com.tagfoster.crypto.ntrutil.NtrUtil
+  * encrypt(...)
+  * decrypt(...)
+* com.tagfoster.crypto.nooputil.XorUtil
+  * encrypt(...)
+  * decrypt(...)
+* com.tagfoster.crypto.nooputil.NoopUtil
+  * encrypt(...)
+  * decrypt(...)
 
 ## Command Line Usage
 Please read usage.txt which you will find within the conf folder.

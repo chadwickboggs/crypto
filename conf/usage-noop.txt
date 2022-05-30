@@ -1,15 +1,15 @@
 
 DESCRIPTION:
 
-    Encrypts or decrypts using the NTRU cryptosystem.  Input gets read from
+    Encrypts or decrypts using the XOR cryptosystem.  Input gets read from
     STDIN.  Output gets written to STDOUT.
 
-    NTRU is a two key, public key, private cryptosystem.  Its keys and
-    encryption parameters get stored in the "~/.ntrutil" folder.
+    XOR is a single/shared key cryptosystem.  Its key and encryption parameters
+    get stored in the "~/.xorutil" folder.
 
 USAGE:
 
-    $ ntrutil <options>
+    $ noop <options>
 
 NOTE: You may press CTRL-D twice to end the the input stream.
 
@@ -17,7 +17,10 @@ NOTE: You may press CTRL-D twice to end the the input stream.
 
 	-e   | --encrypt        Encrypt from stdin to stdout.
 	-d   | --decrypt        Decrypt from stdin to stdout.
+	-b   | --base64         Base64 encode encryption output or Base64 decode decryption input
+	                        [Default: on if NTRU, otherwise off].
 	-t   | --threads        Use specified number of system threads [Default: 1].
+	-k   | --key            The byte length of the shared key to use [Default: 64].
 	-x   | --rxjava         Use the RxJava (Reactive eXtension).
 	-h   | --help           Display usage information.
 	-?   | -u | --usage     Display usage information.

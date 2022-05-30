@@ -9,7 +9,7 @@ DESCRIPTION:
 
 USAGE:
 
-    $ ntrutil options
+    $ xor <options>
 
 NOTE: You may press CTRL-D twice to end the the input stream.
 
@@ -19,7 +19,7 @@ NOTE: You may press CTRL-D twice to end the the input stream.
 	-d   | --decrypt        Decrypt from stdin to stdout.
 	-b   | --base64         Base64 encode encryption output or Base64 decode decryption input
 	                        [Default: on if NTRU, otherwise off].
-	-t   | --threads        Use specified number of system threads [Default: 2].
+	-t   | --threads        Use specified number of system threads [Default: 1].
 	-k   | --key            The byte length of the shared key to use [Default: 64].
 	-x   | --rxjava         Use the RxJava (Reactive eXtension).
 	-h   | --help           Display usage information.

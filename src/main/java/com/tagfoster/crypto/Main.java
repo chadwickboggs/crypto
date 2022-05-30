@@ -44,9 +44,10 @@ import java.util.stream.IntStream;
  */
 public final class Main {
 
-    private static final String USAGE_TXT_FILENAME = "usage-cryptosystem.txt";
+    private static final String USAGE_FILENAME = "usage-cryptosystem.txt";
     private static final int DEFAULT_THREAD_COUNT = 1;
     private static final int DEFAULT_CHUNK_SIZE = 64;
+    private static String usageFilename = USAGE_FILENAME;
     private static int threadCount = DEFAULT_THREAD_COUNT;
     private static int chunkSize = DEFAULT_CHUNK_SIZE;
     private static volatile BufferedInputStream bufferedInputStream = null;
@@ -206,7 +207,7 @@ public final class Main {
     @NotNull
     public static String usageMessage() throws Exception {
         try (
-            final InputStream inputStream = NtrUtil.class.getClassLoader().getResourceAsStream( USAGE_TXT_FILENAME )
+            final InputStream inputStream = NtrUtil.class.getClassLoader().getResourceAsStream( getUsageFilename() )
         ) {
             if ( inputStream == null ) {
                 exit( ExitCode.MISSING_RESOURCE.ordinal() );
@@ -252,6 +253,14 @@ public final class Main {
         }
 
         System.exit( status );
+    }
+
+    public static String getUsageFilename() {
+        return usageFilename;
+    }
+
+    public static void setUsageFilename( String usageFilename ) {
+        Main.usageFilename = usageFilename;
     }
 
     @NotNull
@@ -323,7 +332,8 @@ public final class Main {
             int numCharsRead;
             char lastChar = Character.MIN_VALUE;
             do {
-                while ( ( numCharsRead = inputStreamReader.read( charBuf ) ) == 0 ) {}
+                while ( (numCharsRead = inputStreamReader.read( charBuf )) == 0 ) {
+                }
                 if ( numCharsRead < 0 ) {
                     break;
                 }
@@ -441,7 +451,7 @@ public final class Main {
         @NonNull final Cryptosystem cryptosystem,
         @NonNull final OptionSet options
     ) throws InterruptedException {
-        final byte[][] outputs = new byte[ inputList.size() ][];
+        final byte[][] outputs = new byte[inputList.size()][];
 
         try ( final ExecutorService executorService = Executors.newFixedThreadPool( threadCount ) ) {
             IntStream.range( 0, inputList.size() ).forEachOrdered( i -> {
@@ -465,7 +475,7 @@ public final class Main {
             }
         }
 
-        return Arrays.asList(outputs);
+        return Arrays.asList( outputs );
     }
 
     @NotNull
@@ -475,7 +485,7 @@ public final class Main {
         @NonNull final Cryptosystem cryptosystem,
         @NonNull final OptionSet options
     ) throws InterruptedException {
-        final byte[][] outputs = new byte[ inputList.size() ][];
+        final byte[][] outputs = new byte[inputList.size()][];
 
         try ( final ExecutorService executorService = Executors.newFixedThreadPool( threadCount ) ) {
             final ExecutorScheduler executorScheduler = new ExecutorScheduler(
@@ -519,7 +529,7 @@ public final class Main {
             }
         }
 
-        return Arrays.asList(outputs);
+        return Arrays.asList( outputs );
     }
 
     @NotNull
