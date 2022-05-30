@@ -3,13 +3,13 @@ Crypto may be used as a library to encrypt/decrypt data or called as a command
 line tool which reads/writes to/from stdin/stdout.
 
 ## Library Methods
-* com.tagfoster.crypto.ntrutil.NtrUtil
+* com.tiffanytimbric.crypto.ntrutil.NtrUtil
   * encrypt(...)
   * decrypt(...)
-* com.tagfoster.crypto.nooputil.XorUtil
+* com.tiffanytimbric.crypto.nooputil.XorUtil
   * encrypt(...)
   * decrypt(...)
-* com.tagfoster.crypto.nooputil.NoopUtil
+* com.tiffanytimbric.crypto.nooputil.NoopUtil
   * encrypt(...)
   * decrypt(...)
 

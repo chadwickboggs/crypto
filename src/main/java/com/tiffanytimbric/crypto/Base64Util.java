@@ -1,4 +1,4 @@
-package com.tagfoster.crypto;
+package com.tiffanytimbric.crypto;
 
 import org.jetbrains.annotations.NotNull;
 

@@ -1,8 +1,8 @@
-package com.tagfoster.crypto;
+package com.tiffanytimbric.crypto;
 
-import com.tagfoster.crypto.nooputil.NoopUtil;
-import com.tagfoster.crypto.ntrutil.NtrUtil;
-import com.tagfoster.crypto.xorutil.XorUtil;
+import com.tiffanytimbric.crypto.nooputil.NoopUtil;
+import com.tiffanytimbric.crypto.ntrutil.NtrUtil;
+import com.tiffanytimbric.crypto.xorutil.XorUtil;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Scheduler;
 import io.reactivex.rxjava3.core.Single;

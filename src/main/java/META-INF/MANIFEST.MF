@@ -1,3 +1,2 @@
 Manifest-Version: 1.0
-Main-Class: com.tagfoster.crypto.ntrutil.NtrUtil
-
+Main-Class: com.tiffanytimbric.crypto.Main

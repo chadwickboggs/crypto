@@ -48,6 +48,6 @@ cp="${nooputil_homeutil_conf}:${cp}"
 # Execute the application.
 #
 
-java ${JAVA_OPTS} -cp "${cp}" com.tagfoster.crypto.nooputil.Main $@
+java ${JAVA_OPTS} -cp "${cp}" com.tiffanytimbric.crypto.nooputil.Main $@
 
 exit $?

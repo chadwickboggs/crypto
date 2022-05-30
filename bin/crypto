@@ -48,6 +48,6 @@ cp="${crypto_conf}:${cp}"
 # Execute the application.
 #
 
-java ${JAVA_OPTS} -cp "${cp}" com.tagfoster.crypto.Main $@
+java ${JAVA_OPTS} -cp "${cp}" com.tiffanytimbric.crypto.Main $@
 
 exit $?

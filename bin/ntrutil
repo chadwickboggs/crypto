@@ -48,6 +48,6 @@ cp="${ntrutil_conf}:${cp}"
 # Execute the application.
 #
 
-java ${JAVA_OPTS} -cp "${cp}" com.tagfoster.crypto.ntrutil.Main $@
+java ${JAVA_OPTS} -cp "${cp}" com.tiffanytimbric.crypto.ntrutil.Main $@
 
 exit $?

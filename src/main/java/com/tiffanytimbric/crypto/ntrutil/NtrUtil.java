@@ -1,6 +1,6 @@
-package com.tagfoster.crypto.ntrutil;
+package com.tiffanytimbric.crypto.ntrutil;
 
-import com.tagfoster.crypto.Cryptosystem;
+import com.tiffanytimbric.crypto.Cryptosystem;
 import net.sf.ntru.encrypt.EncryptionKeyPair;
 import net.sf.ntru.encrypt.EncryptionParameters;
 import net.sf.ntru.encrypt.EncryptionPrivateKey;

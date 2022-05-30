@@ -48,6 +48,6 @@ cp="${xorutil_homeutil_conf}:${cp}"
 # Execute the application.
 #
 
-java ${JAVA_OPTS} -cp "${cp}" com.tagfoster.crypto.xorutil.Main $@
+java ${JAVA_OPTS} -cp "${cp}" com.tiffanytimbric.crypto.xorutil.Main $@
 
 exit $?

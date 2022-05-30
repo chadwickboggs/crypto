@@ -1,6 +1,6 @@
-package com.tagfoster.crypto.nooputil;
+package com.tiffanytimbric.crypto.nooputil;
 
-import com.tagfoster.crypto.Cryptosystem;
+import com.tiffanytimbric.crypto.Cryptosystem;
 import org.jetbrains.annotations.NotNull;
 
 

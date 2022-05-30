@@ -1,6 +1,6 @@
-package com.tagfoster.crypto.xorutil;
+package com.tiffanytimbric.crypto.xorutil;
 
-import com.tagfoster.crypto.Cryptosystem;
+import com.tiffanytimbric.crypto.Cryptosystem;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
