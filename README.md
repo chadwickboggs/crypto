@@ -1,6 +1,6 @@
 ## Introduction
 Crypto may be used as a library to encrypt/decrypt data or called as a command
-line tool that read its input from stdin and writes its output to stdout.
+line tool reading/writing to/from stdin/stdout.
 
 ## Library Methods
 * com.tagfoster.crypto.ntrutil.NtrUtil
