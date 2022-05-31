@@ -2,6 +2,8 @@ package com.tiffanytimbric.crypto;
 
 public class ValidationException extends Exception {
 
+    static final long serialVersionUID = -3387516993124226948L;
+
     public ValidationException() {
         super();
     }
