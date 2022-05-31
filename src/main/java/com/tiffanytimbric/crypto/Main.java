@@ -486,7 +486,9 @@ public final class Main {
     ) throws InterruptedException {
         final byte[][] outputs = new byte[inputList.size()][];
 
-        try ( final ExecutorService executorService = Executors.newFixedThreadPool( threadCount ) ) {
+        // TODO: Switch to JDK 19 as the try with resources had to be commented out because of a bug in
+        //  JDK version 18 where ExecutorService fails to implement AutoCloseable.
+        /*try (*/ final ExecutorService executorService = Executors.newFixedThreadPool( threadCount ); /*) {*/
             IntStream.range( 0, inputList.size() ).forEachOrdered( i -> {
                 final List<byte[]> inputs = new ArrayList<>( inputList );
                 final int index = i;
@@ -506,7 +508,7 @@ public final class Main {
             if ( !executorService.awaitTermination( Long.MAX_VALUE, TimeUnit.MILLISECONDS ) ) {
                 exit( ExitCode.INTERRUPTED.ordinal() );
             }
-        }
+//        }
 
         return Arrays.asList( outputs );
     }
@@ -520,7 +522,9 @@ public final class Main {
     ) throws InterruptedException {
         final byte[][] outputs = new byte[inputList.size()][];
 
-        try ( final ExecutorService executorService = Executors.newFixedThreadPool( threadCount ) ) {
+        // TODO: Switch to JDK 19 as the try with resources had to be commented out because of a bug in
+        //  JDK version 18 where ExecutorService fails to implement AutoCloseable.
+        /*try (*/ final ExecutorService executorService = Executors.newFixedThreadPool( threadCount ); /*) {*/
             final ExecutorScheduler executorScheduler = new ExecutorScheduler(
                 executorService, false, true
             );
@@ -560,7 +564,7 @@ public final class Main {
             if ( !executorService.awaitTermination( Long.MAX_VALUE, TimeUnit.MILLISECONDS ) ) {
                 exit( ExitCode.INTERRUPTED.ordinal() );
             }
-        }
+//        }
 
         return Arrays.asList( outputs );
     }
