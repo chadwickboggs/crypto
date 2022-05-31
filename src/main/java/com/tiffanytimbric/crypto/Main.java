@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -40,13 +41,16 @@ import java.util.stream.IntStream;
  * Presently Supported Cryptosystems: NOOP, XOR, NTRU
  * <br>
  * Input gets read from stdin.  Output gets written to stdout.  Encryption
- * output is Base64 encoded.  Decryption input is assumed to be Base64 encoded.
+ * may be Base64 encoded.  Decryption input may be assumed to be Base64
+ * encoded.
  */
 public final class Main {
 
     private static final String USAGE_FILENAME = "usage-cryptosystem.txt";
     private static final int DEFAULT_THREAD_COUNT = 1;
     private static final int DEFAULT_CHUNK_SIZE = 64;
+    private static final int CHUNK_SIZE_NTRU_ENCRYPT = 64;
+    public static final int CHUNK_SIZE_NTRU_DECRYPT = 604;
     private static String usageFilename = USAGE_FILENAME;
     private static int threadCount = DEFAULT_THREAD_COUNT;
     private static int chunkSize = DEFAULT_CHUNK_SIZE;
@@ -82,6 +86,23 @@ public final class Main {
             final String cryptosystemName = String.valueOf( options.valueOf( "c" ) );
             final Cryptosystem cryptosystem = getCryptosystem( cryptosystemName, chunkSize );
 
+            // If NTRU encrypt, then set Chunk Size to a fixed value;
+            if (
+                (options.has( "e" ) || options.has( "encrypt" ))
+                    && cryptosystemName.equals( CryptosystemName.NTRU.name() )
+            ) {
+                chunkSize = CHUNK_SIZE_NTRU_ENCRYPT;
+            }
+
+            // If NTRU decrypt, then set Chunk Size to a fixed value.
+            if (
+                (options.has( "d" ) || options.has( "decrypt" ))
+                    && cryptosystemName.equals( CryptosystemName.NTRU.name() )
+                    && !options.has( "b" ) && !options.has( "base64" )
+            ) {
+                chunkSize = CHUNK_SIZE_NTRU_DECRYPT;
+            }
+
             if ( options.has( "t" ) || options.has( "threads" ) ) {
                 threadCount = Integer.parseInt( options.valueOf( "t" ).toString() );
             }
@@ -108,12 +129,13 @@ public final class Main {
                             inputList.addAll( inputBinaryChunks( chunkSize, threadCount, bufferedInputStream ) );
                         }
 
-                        didRead = validateInput( inputList, didRead );
+                        didRead = validateInputList( inputList, didRead );
 
                         //
                         // 2. Process (encrypt/decrypt) the chunks.
                         //
                         List<byte[]> outputList = processChunks( inputList, threadCount, cryptosystem, options );
+                        validateOutputList( outputList );
 
                         //
                         // 3. Output the processed chunks.
@@ -138,6 +160,19 @@ public final class Main {
         }
 
         exit( ExitCode.SUCCESS.ordinal() );
+    }
+
+    private static void validateOutputList( @NotNull final List<byte[]> outputList ) throws ValidationException {
+        if ( outputList == null || outputList.isEmpty() ) {
+            return;
+        }
+
+        if ( outputList.stream().anyMatch( Objects::isNull ) ) {
+            throw new ValidationException( "Invalid null output value found.  Each output value must be non-null." );
+        }
+        if ( outputList.stream().map( Arrays::asList ).anyMatch( List::isEmpty ) ) {
+            throw new ValidationException( "Invalid empty output value found.  Each output valus must be non-empty." );
+        }
     }
 
     private static void writeTextOutputList(
@@ -181,9 +216,8 @@ public final class Main {
     ) {
         if (
             (options.has( "e" ) || options.has( "encrypt" )) && (
-                options.has( "b" ) || options.has( "base64" ) ||
-                    cryptosystemName.equals( CryptosystemName.NTRU.name() )
-            ) ) {
+                options.has( "b" ) || options.has( "base64" ))
+        ) {
             return true;
         }
 
@@ -194,10 +228,9 @@ public final class Main {
         @NotNull final String cryptosystemName, @NotNull final OptionSet options
     ) {
         if (
-            (options.has( "d" ) || options.has( "decrypt" )) && (
-                options.has( "b" ) || options.has( "base64" ) ||
-                    cryptosystemName.equals( CryptosystemName.NTRU.name() )
-            ) ) {
+            (options.has( "d" ) || options.has( "decrypt" ))
+                && (options.has( "b" ) || options.has( "base64" ))
+        ) {
             return true;
         }
 
@@ -415,7 +448,7 @@ public final class Main {
         return cryptosystem;
     }
 
-    private static boolean validateInput( List<byte[]> inputList, boolean didRead ) {
+    private static boolean validateInputList( List<byte[]> inputList, boolean didRead ) {
         if ( inputList.size() != 0 && inputList.get( 0 ) != null && inputList.get( 0 ).length != 0 ) {
             return true;
         }
