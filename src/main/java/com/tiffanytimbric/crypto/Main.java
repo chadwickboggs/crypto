@@ -122,7 +122,7 @@ public final class Main {
                         // 1. Input one threadCount sized list of chunks.
                         //
                         final List<byte[]> inputList = new ArrayList<>();
-                        if ( isBase64Decode( cryptosystemName, options ) ) {
+                        if ( isBase64Decode( options ) ) {
                             inputList.addAll( Base64Util.decode( inputTextChunks( threadCount, inputStreamReader ) ) );
                         }
                         else {
@@ -140,7 +140,7 @@ public final class Main {
                         //
                         // 3. Output the processed chunks.
                         //
-                        if ( isBase64Encode( cryptosystemName, options ) ) {
+                        if ( isBase64Encode( options ) ) {
                             final List<String> encodedOutputList = Base64Util.encode( outputList );
                             writeTextOutputList( encodedOutputList, outputStreamWriter );
                         }
@@ -211,9 +211,7 @@ public final class Main {
         }
     }
 
-    private static boolean isBase64Encode(
-        @NotNull final String cryptosystemName, @NotNull final OptionSet options
-    ) {
+    private static boolean isBase64Encode( @NotNull final OptionSet options ) {
         if (
             (options.has( "e" ) || options.has( "encrypt" )) && (
                 options.has( "b" ) || options.has( "base64" ))
@@ -224,9 +222,7 @@ public final class Main {
         return false;
     }
 
-    private static boolean isBase64Decode(
-        @NotNull final String cryptosystemName, @NotNull final OptionSet options
-    ) {
+    private static boolean isBase64Decode( @NotNull final OptionSet options ) {
         if (
             (options.has( "d" ) || options.has( "decrypt" ))
                 && (options.has( "b" ) || options.has( "base64" ))
@@ -349,9 +345,7 @@ public final class Main {
                 return;
             }
 
-            if ( cypherText.length() > 0 ) {
-                cypherTexts.add( cypherText );
-            }
+            cypherTexts.add( cypherText );
         } );
 
         return cypherTexts;
