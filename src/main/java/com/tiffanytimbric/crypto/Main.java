@@ -36,7 +36,7 @@ import java.util.stream.IntStream;
 
 /**
  * This class implements command-line access to encryption/decryption.  The
- * cryptosystem it should used must be specified as a command line parameter.
+ * cryptosystem it should use must be specified as a command line parameter.
  * <br>
  * Presently Supported Cryptosystems: NOOP, XOR, NTRU
  * <br>
@@ -171,7 +171,7 @@ public final class Main {
             throw new ValidationException( "Invalid null output value found.  Each output value must be non-null." );
         }
         if ( outputList.stream().map( Arrays::asList ).anyMatch( List::isEmpty ) ) {
-            throw new ValidationException( "Invalid empty output value found.  Each output valus must be non-empty." );
+            throw new ValidationException( "Invalid empty output value found.  Each output value must be non-empty." );
         }
     }
 
