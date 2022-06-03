@@ -36,7 +36,7 @@ import java.util.stream.IntStream;
 
 /**
  * This class implements command-line access to encryption/decryption.  The
- * cryptosystem it should used must be specified as a command line parameter.
+ * cryptosystem it should use must be specified as a command line parameter.
  * <br>
  * Presently Supported Cryptosystems: NOOP, XOR, NTRU
  * <br>
@@ -122,7 +122,7 @@ public final class Main {
                         // 1. Input one threadCount sized list of chunks.
                         //
                         final List<byte[]> inputList = new ArrayList<>();
-                        if ( isBase64Decode( cryptosystemName, options ) ) {
+                        if ( isBase64Decode( options ) ) {
                             inputList.addAll( Base64Util.decode( inputTextChunks( threadCount, inputStreamReader ) ) );
                         }
                         else {
@@ -140,7 +140,7 @@ public final class Main {
                         //
                         // 3. Output the processed chunks.
                         //
-                        if ( isBase64Encode( cryptosystemName, options ) ) {
+                        if ( isBase64Encode( options ) ) {
                             final List<String> encodedOutputList = Base64Util.encode( outputList );
                             writeTextOutputList( encodedOutputList, outputStreamWriter );
                         }
@@ -171,7 +171,7 @@ public final class Main {
             throw new ValidationException( "Invalid null output value found.  Each output value must be non-null." );
         }
         if ( outputList.stream().map( Arrays::asList ).anyMatch( List::isEmpty ) ) {
-            throw new ValidationException( "Invalid empty output value found.  Each output valus must be non-empty." );
+            throw new ValidationException( "Invalid empty output value found.  Each output value must be non-empty." );
         }
     }
 
@@ -211,9 +211,7 @@ public final class Main {
         }
     }
 
-    private static boolean isBase64Encode(
-        @NotNull final String cryptosystemName, @NotNull final OptionSet options
-    ) {
+    private static boolean isBase64Encode( @NotNull final OptionSet options ) {
         if (
             (options.has( "e" ) || options.has( "encrypt" )) && (
                 options.has( "b" ) || options.has( "base64" ))
@@ -224,9 +222,7 @@ public final class Main {
         return false;
     }
 
-    private static boolean isBase64Decode(
-        @NotNull final String cryptosystemName, @NotNull final OptionSet options
-    ) {
+    private static boolean isBase64Decode( @NotNull final OptionSet options ) {
         if (
             (options.has( "d" ) || options.has( "decrypt" ))
                 && (options.has( "b" ) || options.has( "base64" ))
@@ -349,9 +345,7 @@ public final class Main {
                 return;
             }
 
-            if ( cypherText.length() > 0 ) {
-                cypherTexts.add( cypherText );
-            }
+            cypherTexts.add( cypherText );
         } );
 
         return cypherTexts;
@@ -469,7 +463,7 @@ public final class Main {
         int threadCount,
         @NotNull final Cryptosystem cryptosystem,
         @NotNull final OptionSet options
-    ) throws InterruptedException {
+    ) {
         if ( options.has( "x" ) || options.has( "rxjava" ) ) {
             return processChunksConcurrentlyUsingRxJava( inputList, threadCount, cryptosystem, options );
         }
@@ -483,12 +477,14 @@ public final class Main {
         int threadCount,
         @NonNull final Cryptosystem cryptosystem,
         @NonNull final OptionSet options
-    ) throws InterruptedException {
+    ) {
         final byte[][] outputs = new byte[inputList.size()][];
 
-        // TODO: Switch to JDK 19 as the try with resources had to be commented out because of a bug in
-        //  JDK version 18 where ExecutorService fails to implement AutoCloseable.
-        /*try (*/ final ExecutorService executorService = Executors.newFixedThreadPool( threadCount ); /*) {*/
+        try (
+            final AutoCloseableExecutorServiceHolder autoCloseableExecutorServiceHolder =
+                new AutoCloseableExecutorServiceHolder( Executors.newFixedThreadPool( threadCount ) )
+        ) {
+            final ExecutorService executorService = autoCloseableExecutorServiceHolder.executorService();
             IntStream.range( 0, inputList.size() ).forEachOrdered( i -> {
                 final List<byte[]> inputs = new ArrayList<>( inputList );
                 final int index = i;
@@ -503,12 +499,7 @@ public final class Main {
                     );
                 }
             } );
-
-            executorService.shutdown();
-            if ( !executorService.awaitTermination( Long.MAX_VALUE, TimeUnit.MILLISECONDS ) ) {
-                exit( ExitCode.INTERRUPTED.ordinal() );
-            }
-//        }
+        }
 
         return Arrays.asList( outputs );
     }
@@ -519,12 +510,14 @@ public final class Main {
         int threadCount,
         @NonNull final Cryptosystem cryptosystem,
         @NonNull final OptionSet options
-    ) throws InterruptedException {
+    ) {
         final byte[][] outputs = new byte[inputList.size()][];
 
-        // TODO: Switch to JDK 19 as the try with resources had to be commented out because of a bug in
-        //  JDK version 18 where ExecutorService fails to implement AutoCloseable.
-        /*try (*/ final ExecutorService executorService = Executors.newFixedThreadPool( threadCount ); /*) {*/
+        try (
+            final AutoCloseableExecutorServiceHolder autoCloseableExecutorServiceHolder =
+                new AutoCloseableExecutorServiceHolder( Executors.newFixedThreadPool( threadCount ) )
+        ) {
+            final ExecutorService executorService = autoCloseableExecutorServiceHolder.executorService();
             final ExecutorScheduler executorScheduler = new ExecutorScheduler(
                 executorService, false, true
             );
@@ -559,12 +552,7 @@ public final class Main {
             single.doOnError( Main::exit );
             executorScheduler.start();
             single.blockingSubscribe();
-
-            executorService.shutdown();
-            if ( !executorService.awaitTermination( Long.MAX_VALUE, TimeUnit.MILLISECONDS ) ) {
-                exit( ExitCode.INTERRUPTED.ordinal() );
-            }
-//        }
+        }
 
         return Arrays.asList( outputs );
     }
@@ -598,4 +586,42 @@ public final class Main {
         INTERRUPTED, EXCEPTION
     }
 
+
+    /**
+     * This record exists because ExecutorService does not implement AutoCloseable
+     * Java version 19.
+     */
+    private record AutoCloseableExecutorServiceHolder(
+        @NotNull ExecutorService executorService
+    ) implements AutoCloseable {
+
+        @Override
+        @NotNull
+        public ExecutorService executorService() {
+            return executorService;
+        }
+
+        @Override
+        public void close() {
+            executorService.shutdown();
+            while ( !executorService.isTerminated() ) {
+                try {
+                    if ( !executorService.awaitTermination( Long.MAX_VALUE, TimeUnit.MILLISECONDS ) ) {
+                        exit( ExitCode.INTERRUPTED.ordinal() );
+                    }
+                }
+                catch ( InterruptedException e ) {
+                    exit( e );
+                }
+            }
+
+            if ( executorService instanceof AutoCloseable ) {
+                try {
+                    ((AutoCloseable) executorService).close();
+                }
+                catch ( Exception ignored ) {
+                }
+            }
+        }
+    }
 }
