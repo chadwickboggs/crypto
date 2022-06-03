@@ -10,6 +10,7 @@ import io.reactivex.rxjava3.internal.schedulers.ExecutorScheduler;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -107,8 +108,6 @@ public final class Main {
                 threadCount = Integer.parseInt( options.valueOf( "t" ).toString() );
             }
 
-            boolean didRead = false;
-
             try (
                 final BufferedInputStream bufferedInputStream = getBufferedInputStream( System.in );
                 final InputStreamReader inputStreamReader = getInputStreamReader( bufferedInputStream )
@@ -128,8 +127,10 @@ public final class Main {
                         else {
                             inputList.addAll( inputBinaryChunks( chunkSize, threadCount, bufferedInputStream ) );
                         }
-
-                        didRead = validateInputList( inputList, didRead );
+                        if ( isEmpty( inputList ) ) {
+                            break;
+                        }
+                        validateInputList( inputList );
 
                         //
                         // 2. Process (encrypt/decrypt) the chunks.
@@ -341,7 +342,7 @@ public final class Main {
         final List<String> cypherTexts = new ArrayList<>();
         IntStream.rangeClosed( 1, chunkCount ).forEachOrdered( count -> {
             String cypherText = inputTextChunk( inputStreamReader );
-            if ( cypherText.length() <= 0 ) {
+            if ( cypherText.length() == 0 ) {
                 return;
             }
 
@@ -442,19 +443,20 @@ public final class Main {
         return cryptosystem;
     }
 
-    private static boolean validateInputList( List<byte[]> inputList, boolean didRead ) {
-        if ( inputList.size() != 0 && inputList.get( 0 ) != null && inputList.get( 0 ).length != 0 ) {
-            return true;
+    private static boolean validateInputList(
+        @NotNull final List<byte[]> inputList
+    ) throws ValidationException {
+        if ( isEmpty( inputList ) || inputList.get( 0 ).length == 0 ) {
+            throw new ValidationException(
+                "Invalid input data.  The nput data's length must be greater than zero."
+            );
         }
 
-        if ( didRead ) {
-            exit( ExitCode.SUCCESS.ordinal() );
-        }
-        else {
-            exit( ExitCode.EMPTY_INPUT.ordinal() );
-        }
+        return true;
+    }
 
-        return false;
+    private static boolean isEmpty( @Nullable List<byte[]> inputList ) {
+        return inputList == null || inputList.isEmpty() || inputList.get( 0 ) == null;
     }
 
     @NotNull
