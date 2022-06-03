@@ -163,7 +163,7 @@ public final class Main {
         exit( ExitCode.SUCCESS.ordinal() );
     }
 
-    private static void validateOutputList( @NotNull final List<byte[]> outputList ) throws ValidationException {
+    private static void validateOutputList( @Nullable final List<byte[]> outputList ) throws ValidationException {
         if ( outputList == null || outputList.isEmpty() ) {
             return;
         }
@@ -444,7 +444,7 @@ public final class Main {
     }
 
     private static boolean validateInputList(
-        @NotNull final List<byte[]> inputList
+        @Nullable final List<byte[]> inputList
     ) throws ValidationException {
         if ( isEmpty( inputList ) || inputList.get( 0 ).length == 0 ) {
             throw new ValidationException(
