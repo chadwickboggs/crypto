@@ -463,7 +463,7 @@ public final class Main {
         int threadCount,
         @NotNull final Cryptosystem cryptosystem,
         @NotNull final OptionSet options
-    ) throws InterruptedException {
+    ) {
         if ( options.has( "x" ) || options.has( "rxjava" ) ) {
             return processChunksConcurrentlyUsingRxJava( inputList, threadCount, cryptosystem, options );
         }
@@ -477,12 +477,14 @@ public final class Main {
         int threadCount,
         @NonNull final Cryptosystem cryptosystem,
         @NonNull final OptionSet options
-    ) throws InterruptedException {
+    ) {
         final byte[][] outputs = new byte[inputList.size()][];
 
-        // TODO: Switch to JDK 19 as the try with resources had to be commented out because of a bug in
-        //  JDK version 18 where ExecutorService fails to implement AutoCloseable.
-        /*try (*/ final ExecutorService executorService = Executors.newFixedThreadPool( threadCount ); /*) {*/
+        try (
+            final AutoCloseableExecutorServiceHolder autoCloseableExecutorServiceHolder =
+                new AutoCloseableExecutorServiceHolder( Executors.newFixedThreadPool( threadCount ) )
+        ) {
+            final ExecutorService executorService = autoCloseableExecutorServiceHolder.executorService();
             IntStream.range( 0, inputList.size() ).forEachOrdered( i -> {
                 final List<byte[]> inputs = new ArrayList<>( inputList );
                 final int index = i;
@@ -497,12 +499,7 @@ public final class Main {
                     );
                 }
             } );
-
-            executorService.shutdown();
-            if ( !executorService.awaitTermination( Long.MAX_VALUE, TimeUnit.MILLISECONDS ) ) {
-                exit( ExitCode.INTERRUPTED.ordinal() );
-            }
-//        }
+        }
 
         return Arrays.asList( outputs );
     }
@@ -513,12 +510,14 @@ public final class Main {
         int threadCount,
         @NonNull final Cryptosystem cryptosystem,
         @NonNull final OptionSet options
-    ) throws InterruptedException {
+    ) {
         final byte[][] outputs = new byte[inputList.size()][];
 
-        // TODO: Switch to JDK 19 as the try with resources had to be commented out because of a bug in
-        //  JDK version 18 where ExecutorService fails to implement AutoCloseable.
-        /*try (*/ final ExecutorService executorService = Executors.newFixedThreadPool( threadCount ); /*) {*/
+        try (
+            final AutoCloseableExecutorServiceHolder autoCloseableExecutorServiceHolder =
+                new AutoCloseableExecutorServiceHolder( Executors.newFixedThreadPool( threadCount ) )
+        ) {
+            final ExecutorService executorService = autoCloseableExecutorServiceHolder.executorService();
             final ExecutorScheduler executorScheduler = new ExecutorScheduler(
                 executorService, false, true
             );
@@ -553,12 +552,7 @@ public final class Main {
             single.doOnError( Main::exit );
             executorScheduler.start();
             single.blockingSubscribe();
-
-            executorService.shutdown();
-            if ( !executorService.awaitTermination( Long.MAX_VALUE, TimeUnit.MILLISECONDS ) ) {
-                exit( ExitCode.INTERRUPTED.ordinal() );
-            }
-//        }
+        }
 
         return Arrays.asList( outputs );
     }
@@ -592,4 +586,42 @@ public final class Main {
         INTERRUPTED, EXCEPTION
     }
 
+
+    /**
+     * This record exists because ExecutorService does not implement AutoCloseable
+     * Java version 19.
+     */
+    private record AutoCloseableExecutorServiceHolder(
+        @NotNull ExecutorService executorService
+    ) implements AutoCloseable {
+
+        @Override
+        @NotNull
+        public ExecutorService executorService() {
+            return executorService;
+        }
+
+        @Override
+        public void close() {
+            executorService.shutdown();
+            while ( !executorService.isTerminated() ) {
+                try {
+                    if ( !executorService.awaitTermination( Long.MAX_VALUE, TimeUnit.MILLISECONDS ) ) {
+                        exit( ExitCode.INTERRUPTED.ordinal() );
+                    }
+                }
+                catch ( InterruptedException e ) {
+                    exit( e );
+                }
+            }
+
+            if ( executorService instanceof AutoCloseable ) {
+                try {
+                    ((AutoCloseable) executorService).close();
+                }
+                catch ( Exception ignored ) {
+                }
+            }
+        }
+    }
 }
