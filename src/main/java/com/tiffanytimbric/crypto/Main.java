@@ -451,7 +451,7 @@ public final class Main {
     ) throws ValidationException {
         if ( isEmpty( inputList ) || inputList.get( 0 ).length == 0 ) {
             throw new ValidationException(
-                "Invalid input data.  The nput data's length must be greater than zero."
+                "Invalid input data.  The input data's length must be greater than zero."
             );
         }
 
