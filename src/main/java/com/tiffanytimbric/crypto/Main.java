@@ -68,6 +68,9 @@ public final class Main {
         }
 
         try {
+            //
+            // 0. Setup.
+            //
             final OptionSet options = getCliParser().parse( args );
 
             if ( options.has( "?" ) || options.has( "h" ) || options.has( "u" )
