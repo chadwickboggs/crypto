@@ -14,7 +14,7 @@ line tool which reads/writes to/from stdin/stdout.
   * decrypt(...)
 
 ## Command Line Usage
-Please read usage.txt which you will find within the conf folder.
+Please read usage-<cryptosystem>.txt which you will find within the conf folder.
 
 ## Usage Examples
 

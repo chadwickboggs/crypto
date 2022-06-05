@@ -1,6 +1,6 @@
 package com.tiffanytimbric.crypto.ntrutil;
 
-import com.tiffanytimbric.crypto.Cryptosystem;
+import com.tiffanytimbric.crypto.CryptosystemBase;
 import net.sf.ntru.encrypt.EncryptionKeyPair;
 import net.sf.ntru.encrypt.EncryptionParameters;
 import net.sf.ntru.encrypt.EncryptionPrivateKey;
@@ -18,19 +18,21 @@ import java.io.IOException;
  * This class implements NTRU encryption/decryption.  It store its NTRU
  * encryption parameters and keys in the "~/.ntrutil" folder.
  */
-public final class NtrUtil implements Cryptosystem {
+public final class NtrUtil extends CryptosystemBase {
 
+    public static final int DEFAULT_CHUNK_SIZE_ENCRYPT = 64;
+    public static final int DEFAULT_CHUNK_SIZE_DECRYPT = 604;
     private static final String USER_STORE_FOLDER = System.getenv( "HOME" ) + "/.ntrutil";
     private static final String PRIVATE_KEY_FILENAME = USER_STORE_FOLDER + "/encryption_private_key";
     private static final String PUBLIC_KEY_FILENAME = USER_STORE_FOLDER + "/encryption_public_key";
     private static final String ENCRYPTION_PARAMETERS_FILENAME = USER_STORE_FOLDER + "/encryption_parameters";
-    private final int messageLength;
     private volatile NtruEncrypt ntru = null;
     private volatile EncryptionParameters encryptionParameters = null;
     private volatile EncryptionKeyPair keyPair = null;
 
-    public NtrUtil( int messageLength ) {
-        this.messageLength = messageLength;
+
+    public NtrUtil() {
+        super( DEFAULT_CHUNK_SIZE_ENCRYPT, DEFAULT_CHUNK_SIZE_DECRYPT );
     }
 
 
@@ -89,10 +91,10 @@ public final class NtrUtil implements Cryptosystem {
             }
         }
 
-        if ( messageLength > encryptionParameters.getMaxMessageLength() ) {
+        if ( chunkSizeEncrypt > encryptionParameters.getMaxMessageLength() ) {
             throw new RuntimeException( String.format(
                 "Unsupported message length.  Message Length: %d, Supported Max Message Length: %d",
-                messageLength, encryptionParameters.getMaxMessageLength()
+                chunkSizeEncrypt, encryptionParameters.getMaxMessageLength()
             ) );
         }
     }

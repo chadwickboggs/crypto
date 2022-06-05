@@ -1,6 +1,6 @@
 package com.tiffanytimbric.crypto.xorutil;
 
-import com.tiffanytimbric.crypto.Cryptosystem;
+import com.tiffanytimbric.crypto.CryptosystemBase;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,17 +15,18 @@ import java.security.SecureRandom;
  * This class implements XOR encryption/decryption.  It store its XOR
  * encryption parameters and keys in the "~/.xorutil" folder.
  */
-public final class XorUtil implements Cryptosystem {
+public final class XorUtil extends CryptosystemBase {
 
+    public static final int DEFAULT_CHUNK_SIZE_ENCRYPT = 65536;
+    public static final int DEFAULT_CHUNK_SIZE_DECRYPT = 65536;
     private static final String USER_STORE_FOLDER = System.getenv( "HOME" ) + "/.xorutil";
     private static final String KEY_FILENAME = USER_STORE_FOLDER + "/encryption_key";
-    private final int keySize;
 
     private volatile byte[] key = null;
 
 
-    public XorUtil( int keySize ) {
-        this.keySize = keySize;
+    public XorUtil() {
+        super( DEFAULT_CHUNK_SIZE_ENCRYPT, DEFAULT_CHUNK_SIZE_DECRYPT );
     }
 
     private static void validateMessageLength(
@@ -41,12 +42,12 @@ public final class XorUtil implements Cryptosystem {
 
     @NotNull
     public byte[] encrypt( @NotNull final byte[] message ) throws IOException {
-        return xorMessage( message, getKey() );
+        return xorMessage( message, getKey( getChunkSizeEncrypt() ) );
     }
 
     @NotNull
     public byte[] decrypt( @NotNull final byte[] bytes ) throws IOException {
-        return xorMessage( bytes, getKey() );
+        return xorMessage( bytes, getKey( getChunkSizeDecrypt() ) );
     }
 
     @NotNull
@@ -62,12 +63,12 @@ public final class XorUtil implements Cryptosystem {
     }
 
     @NotNull
-    private synchronized byte[] getKey() throws IOException {
+    private synchronized byte[] getKey( int chunkSize ) throws IOException {
         if ( key == null ) {
-            key = readKey();
+            key = readKey( chunkSize );
             if ( key == null ) {
-                key = generateKey( keySize );
-                saveKey();
+                key = generateKey( chunkSize );
+                saveKey( chunkSize );
             }
         }
 
@@ -75,22 +76,22 @@ public final class XorUtil implements Cryptosystem {
     }
 
     @Nullable
-    private byte[] readKey() throws IOException {
+    private byte[] readKey( int keySize ) throws IOException {
         new File( USER_STORE_FOLDER ).mkdirs();
-        if ( !new File( getKeyFilename() ).exists() ) {
+        if ( !new File( getKeyFilename( keySize ) ).exists() ) {
             return null;
         }
 
-        return Files.readAllBytes( Paths.get( getKeyFilename() ) );
+        return Files.readAllBytes( Paths.get( getKeyFilename( keySize ) ) );
     }
 
-    private void saveKey() throws IOException {
+    private void saveKey( int keySize ) throws IOException {
         new File( USER_STORE_FOLDER ).mkdirs();
-        Files.write( Paths.get( getKeyFilename() ), getKey() );
+        Files.write( Paths.get( getKeyFilename( keySize ) ), getKey( keySize ) );
     }
 
     @NotNull
-    private String getKeyFilename() {
+    private String getKeyFilename( int keySize ) {
         return String.format( "%s.%d", KEY_FILENAME, keySize );
     }
 
