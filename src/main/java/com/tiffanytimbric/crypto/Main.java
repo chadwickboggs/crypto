@@ -49,22 +49,20 @@ public final class Main {
 
     private static final String USAGE_FILENAME = "usage-cryptosystem.txt";
     private static final int DEFAULT_THREAD_COUNT = 1;
-    private static final int DEFAULT_CHUNK_SIZE = 64;
-    private static final int CHUNK_SIZE_NTRU_ENCRYPT = 64;
-    public static final int CHUNK_SIZE_NTRU_DECRYPT = 604;
     private static String usageFilename = USAGE_FILENAME;
     private static int threadCount = DEFAULT_THREAD_COUNT;
-    private static int chunkSize = DEFAULT_CHUNK_SIZE;
+
     private static volatile BufferedInputStream bufferedInputStream = null;
     private static volatile InputStreamReader inputStreamReader = null;
     private static volatile BufferedOutputStream bufferedOutputStream = null;
     private static volatile OutputStreamWriter outputStreamWriter = null;
 
+
     public static void main( @NotNull final String... args ) throws Exception {
         if ( args.length == 0 ) {
             System.err.println( usageMessage() );
 
-            exit( ExitCode.MISSING_CLI_ARGUMENTS.ordinal() );
+            exit( ExitCode.MISSING_CLI_ARGUMENTS );
         }
 
         try {
@@ -77,39 +75,31 @@ public final class Main {
                 || options.has( "help" ) || options.has( "usage" ) ) {
                 System.out.println( usageMessage() );
 
-                exit( ExitCode.SUCCESS.ordinal() );
-            }
-
-            if ( options.has( "k" ) || options.has( "key" ) ) {
-                chunkSize = Integer.parseInt( options.valueOf( "k" ).toString() );
+                exit( ExitCode.SUCCESS );
             }
 
             if ( !options.has( "c" ) && !options.has( "cryptosystem" ) ) {
-                exit( ExitCode.MISSING_CLI_ARGUMENTS.ordinal() );
+                exit( ExitCode.MISSING_CLI_ARGUMENTS );
             }
             final String cryptosystemName = String.valueOf( options.valueOf( "c" ) );
-            final Cryptosystem cryptosystem = getCryptosystem( cryptosystemName, chunkSize );
+            final Cryptosystem cryptosystem = getCryptosystem( cryptosystemName );
 
-            // If NTRU encrypt, then set Chunk Size to a fixed value;
-            if (
-                (options.has( "e" ) || options.has( "encrypt" ))
-                    && cryptosystemName.equals( CryptosystemName.NTRU.name() )
-            ) {
-                chunkSize = CHUNK_SIZE_NTRU_ENCRYPT;
-            }
+            if ( options.has( "k" ) || options.has( "key" ) ) {
+                if ( cryptosystemName.equals( CryptosystemName.NTRU.name() ) ) {
+                    exit( ExitCode.INVALID_ARGUMENT );
+                }
 
-            // If NTRU decrypt, then set Chunk Size to a fixed value.
-            if (
-                (options.has( "d" ) || options.has( "decrypt" ))
-                    && cryptosystemName.equals( CryptosystemName.NTRU.name() )
-                    && !options.has( "b" ) && !options.has( "base64" )
-            ) {
-                chunkSize = CHUNK_SIZE_NTRU_DECRYPT;
+                cryptosystem.setChunkSizeEncrypt( Integer.parseInt( options.valueOf( "k" ).toString() ) );
+                cryptosystem.setChunkSizeDecrypt( Integer.parseInt( options.valueOf( "k" ).toString() ) );
             }
 
             if ( options.has( "t" ) || options.has( "threads" ) ) {
                 threadCount = Integer.parseInt( options.valueOf( "t" ).toString() );
             }
+
+            int chunkSize = (options.has( "e" ) || options.has( "encrypt" ))
+                ? cryptosystem.getChunkSizeEncrypt()
+                : cryptosystem.getChunkSizeDecrypt();
 
             try (
                 final BufferedInputStream bufferedInputStream = getBufferedInputStream( System.in );
@@ -125,10 +115,16 @@ public final class Main {
                         //
                         final List<byte[]> inputList = new ArrayList<>();
                         if ( isBase64Decode( options ) ) {
-                            inputList.addAll( Base64Util.decode( inputTextChunks( threadCount, inputStreamReader ) ) );
+                            inputList.addAll(
+                                Base64Util.decode(
+                                    inputTextChunks( threadCount, inputStreamReader )
+                                )
+                            );
                         }
                         else {
-                            inputList.addAll( inputBinaryChunks( chunkSize, threadCount, bufferedInputStream ) );
+                            inputList.addAll(
+                                inputBinaryChunks( chunkSize, threadCount, bufferedInputStream )
+                            );
                         }
                         if ( isEmpty( inputList ) ) {
                             break;
@@ -163,7 +159,7 @@ public final class Main {
             exit( t );
         }
 
-        exit( ExitCode.SUCCESS.ordinal() );
+        exit( ExitCode.SUCCESS );
     }
 
     private static void validateOutputList( @Nullable final List<byte[]> outputList ) throws ValidationException {
@@ -243,7 +239,7 @@ public final class Main {
             final InputStream inputStream = NtrUtil.class.getClassLoader().getResourceAsStream( getUsageFilename() )
         ) {
             if ( inputStream == null ) {
-                exit( ExitCode.MISSING_RESOURCE.ordinal() );
+                exit( ExitCode.MISSING_RESOURCE );
 
                 return "";
             }
@@ -271,12 +267,17 @@ public final class Main {
     public static void exit( @NotNull final Throwable t ) {
         t.printStackTrace();
 
-        exit( ExitCode.EXCEPTION.ordinal() );
+        exit( ExitCode.EXCEPTION.ordinal(), t.getMessage() );
     }
 
-    public static void exit( int status ) {
+    public static void exit( @NotNull final ExitCode exitCode ) {
+        exit( exitCode.ordinal(), exitCode.getMessage() );
+    }
+
+    public static void exit( int status, @NotNull final String message ) {
         if ( status != 0 ) {
             try {
+                System.err.println( message );
                 System.err.println( usageMessage() );
             }
             catch ( Exception e ) {
@@ -432,15 +433,13 @@ public final class Main {
     }
 
     @NotNull
-    private static Cryptosystem getCryptosystem(
-        @NotNull final String cryptosystemName, int keySize
-    ) {
+    private static Cryptosystem getCryptosystem( @NotNull final String cryptosystemName ) {
         Cryptosystem cryptosystem = null;
         switch ( CryptosystemName.valueOf( cryptosystemName ) ) {
             case NOOP -> cryptosystem = new NoopUtil();
-            case XOR -> cryptosystem = new XorUtil( keySize );
-            case NTRU -> cryptosystem = new NtrUtil( keySize );
-            default -> exit( ExitCode.UNRECOGNIZED_ARGUMENT_VALUE.ordinal() );
+            case XOR -> cryptosystem = new XorUtil();
+            case NTRU -> cryptosystem = new NtrUtil();
+            default -> exit( ExitCode.UNRECOGNIZED_ARGUMENT_VALUE );
         }
 
         return cryptosystem;
@@ -572,7 +571,7 @@ public final class Main {
         parser.accepts( "decrypt" );
         parser.accepts( "base64" );
         parser.accepts( "rxjava" );
-        parser.accepts( "key" ).withRequiredArg().defaultsTo( String.valueOf( DEFAULT_CHUNK_SIZE ) );
+        parser.accepts( "key" ).withRequiredArg().defaultsTo( String.valueOf( 64 ) );
         parser.accepts( "threads" ).withRequiredArg().defaultsTo( String.valueOf( DEFAULT_THREAD_COUNT ) );
         parser.accepts( "help" );
         parser.accepts( "usage" );
@@ -587,8 +586,27 @@ public final class Main {
 
 
     public enum ExitCode {
-        SUCCESS, MISSING_CLI_ARGUMENTS, UNRECOGNIZED_ARGUMENT_VALUE, MISSING_RESOURCE, EMPTY_INPUT,
-        INTERRUPTED, EXCEPTION
+        SUCCESS( "Execution of this program completed successfully." ),
+        MISSING_CLI_ARGUMENTS( "Some of the required command line arguments are missing." ),
+        UNRECOGNIZED_ARGUMENT_VALUE( "Some command line arguments have unrecognized values." ),
+        MISSING_RESOURCE(
+            "A required resource expected to be found in this program's classpath was not found."
+        ),
+        EMPTY_INPUT( "Empty input was found were non-empty is required." ),
+        INVALID_ARGUMENT( "Some command line arguments were given which are invalid." ),
+        INTERRUPTED( "A processing thread was interrupted corrupting processing." ),
+        EXCEPTION( "An unexpected exception has occurred." );
+
+        private final String message;
+
+        ExitCode( @NotNull final String message ) {
+            this.message = message;
+        }
+
+        @NotNull
+        public String getMessage() {
+            return message;
+        }
     }
 
 
@@ -612,7 +630,7 @@ public final class Main {
             while ( !executorService.isTerminated() ) {
                 try {
                     if ( !executorService.awaitTermination( Long.MAX_VALUE, TimeUnit.MILLISECONDS ) ) {
-                        exit( ExitCode.INTERRUPTED.ordinal() );
+                        exit( ExitCode.INTERRUPTED );
                     }
                 }
                 catch ( InterruptedException e ) {
