@@ -147,7 +147,9 @@ public final class Main {
                         // 3. Output the processed chunks.
                         //
                         if ( base64EncodeOutput ) {
-                            writeTextOutputList( Base64Util.encode( outputList ), outputStreamWriter );
+                            writeTextOutputList(
+                                Base64Util.encode( outputList ), outputStreamWriter
+                            );
                         }
                         else {
                             writeOutputList( outputList, bufferedOutputStream );
