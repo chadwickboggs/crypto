@@ -38,12 +38,11 @@ import java.util.stream.IntStream;
 /**
  * This class implements command-line access to encryption/decryption.  The
  * cryptosystem it should use must be specified as a command line parameter.
- * <br>
- * Presently Supported Cryptosystems: NOOP, XOR, NTRU
- * <br>
+ * <p>
+ * <b>Presently Supported Cryptosystems:</b> NOOP, XOR, NTRU
+ * <p>
  * Input gets read from stdin.  Output gets written to stdout.  Encryption
- * may be Base64 encoded.  Decryption input may be assumed to be Base64
- * encoded.
+ * output may be Base64 encoded.  Decryption input may be Base64 encoded.
  */
 public final class Main {
 
