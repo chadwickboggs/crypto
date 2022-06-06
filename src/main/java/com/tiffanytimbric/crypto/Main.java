@@ -38,12 +38,11 @@ import java.util.stream.IntStream;
 /**
  * This class implements command-line access to encryption/decryption.  The
  * cryptosystem it should use must be specified as a command line parameter.
- * <br>
- * Presently Supported Cryptosystems: NOOP, XOR, NTRU
- * <br>
+ * <p>
+ * <b>Presently Supported Cryptosystems:</b> NOOP, XOR, NTRU
+ * <p>
  * Input gets read from stdin.  Output gets written to stdout.  Encryption
- * may be Base64 encoded.  Decryption input may be assumed to be Base64
- * encoded.
+ * output may be Base64 encoded.  Decryption input may be Base64 encoded.
  */
 public final class Main {
 
@@ -58,7 +57,30 @@ public final class Main {
     private static volatile OutputStreamWriter outputStreamWriter = null;
 
 
-    public static void main( @NotNull final String... args ) throws Exception {
+    /**
+     * Executes this program which reads its config, parses its command-line arguments,
+     * then executes its logic.  This programs logic consists of reading input from stdin,
+     * running the specified cryptosystem's encrypt or decrypt on it, then printing the
+     * resulting output to stdout.  Input is read in, processed, and output in lists of
+     * chunks.  The size of each chunk equals the key size which was specified or configured
+     * for specified cryptosystem.  The list of chunks equals the thread count which was
+     * specified or configured.
+     * <p>
+     *     <b>Program Steps</b>
+     * <ol>
+     *     <li>Setup: Read config, parse command-line arguments.</li>
+     *     <li>Execute program logic.
+     *      <ol>
+     *          <li>Input one threadCount sized list of chunks.</li>
+     *          <li>Process (encrypt/decrypt) the chunks.</li>
+     *          <li>Output the processed list of chunks.</li>
+     *      </ol>
+     *     </li>
+     * </ol>
+     *
+     * @param args command-line arguments.
+     */
+    public static void main( @NotNull final String... args ) {
         if ( args.length == 0 ) {
             System.err.println( usageMessage() );
 
@@ -67,7 +89,7 @@ public final class Main {
 
         try {
             //
-            // 0. Setup.
+            // 1. Setup: Read config, parse command-line arguments.
             //
             final OptionSet options = getCliParser().parse( args );
 
@@ -97,10 +119,18 @@ public final class Main {
                 threadCount = Integer.parseInt( options.valueOf( "t" ).toString() );
             }
 
-            int chunkSize = (options.has( "e" ) || options.has( "encrypt" ))
-                ? cryptosystem.getChunkSizeEncrypt()
-                : cryptosystem.getChunkSizeDecrypt();
+            boolean decryptInput = options.has( "d" ) || options.has( "decrypt" );
+            boolean encryptOutput = options.has( "e" ) || options.has( "encrypt" );
+            int chunkSize = encryptOutput ? cryptosystem.getChunkSizeEncrypt() : cryptosystem.getChunkSizeDecrypt();
 
+            boolean base64DecodeInput = isBase64Decode( options );
+            boolean base64EncodeOutput = isBase64Encode( options );
+
+            boolean useRxJava = options.has( "x" ) || options.has( "rxjava" );
+
+            //
+            // 2. Execute program logic.
+            //
             try (
                 final BufferedInputStream bufferedInputStream = getBufferedInputStream( System.in );
                 final InputStreamReader inputStreamReader = getInputStreamReader( bufferedInputStream )
@@ -111,10 +141,10 @@ public final class Main {
                 ) {
                     while ( true ) {
                         //
-                        // 1. Input one threadCount sized list of chunks.
+                        // 2.1. Input one threadCount sized list of chunks.
                         //
                         final List<byte[]> inputList = new ArrayList<>();
-                        if ( isBase64Decode( options ) ) {
+                        if ( base64DecodeInput ) {
                             inputList.addAll(
                                 Base64Util.decode(
                                     inputTextChunks( threadCount, inputStreamReader )
@@ -132,17 +162,20 @@ public final class Main {
                         validateInputList( inputList );
 
                         //
-                        // 2. Process (encrypt/decrypt) the chunks.
+                        // 2.2. Process (encrypt/decrypt) the chunks.
                         //
-                        List<byte[]> outputList = processChunks( inputList, threadCount, cryptosystem, options );
+                        List<byte[]> outputList = processChunks(
+                            inputList, decryptInput, encryptOutput, threadCount, cryptosystem, useRxJava
+                        );
                         validateOutputList( outputList );
 
                         //
-                        // 3. Output the processed chunks.
+                        // 2.3. Output the processed list of chunks.
                         //
-                        if ( isBase64Encode( options ) ) {
-                            final List<String> encodedOutputList = Base64Util.encode( outputList );
-                            writeTextOutputList( encodedOutputList, outputStreamWriter );
+                        if ( base64EncodeOutput ) {
+                            writeTextOutputList(
+                                Base64Util.encode( outputList ), outputStreamWriter
+                            );
                         }
                         else {
                             writeOutputList( outputList, bufferedOutputStream );
@@ -234,7 +267,7 @@ public final class Main {
     }
 
     @NotNull
-    public static String usageMessage() throws Exception {
+    public static String usageMessage() {
         try (
             final InputStream inputStream = NtrUtil.class.getClassLoader().getResourceAsStream( getUsageFilename() )
         ) {
@@ -262,6 +295,11 @@ public final class Main {
                 }
             }
         }
+        catch ( Throwable t ) {
+            exit( t );
+        }
+
+        return "";
     }
 
     public static void exit( @NotNull final Throwable t ) {
@@ -464,23 +502,22 @@ public final class Main {
     @NotNull
     private static List<byte[]> processChunks(
         @NotNull final List<byte[]> inputList,
-        int threadCount,
+        boolean decryptInput, boolean encryptOutput, int threadCount,
         @NotNull final Cryptosystem cryptosystem,
-        @NotNull final OptionSet options
+        boolean useRxJava
     ) {
-        if ( options.has( "x" ) || options.has( "rxjava" ) ) {
-            return processChunksConcurrentlyUsingRxJava( inputList, threadCount, cryptosystem, options );
+        if ( useRxJava ) {
+            return processChunksConcurrentlyUsingRxJava( inputList, decryptInput, encryptOutput, threadCount, cryptosystem );
         }
 
-        return processChunksConcurrently( inputList, threadCount, cryptosystem, options );
+        return processChunksConcurrently( inputList, decryptInput, encryptOutput, threadCount, cryptosystem );
     }
 
     @NotNull
     private static List<byte[]> processChunksConcurrently(
         @NonNull final List<byte[]> inputList,
-        int threadCount,
-        @NonNull final Cryptosystem cryptosystem,
-        @NonNull final OptionSet options
+        boolean decryptInput, boolean encryptOutput, int threadCount,
+        @NonNull final Cryptosystem cryptosystem
     ) {
         final byte[][] outputs = new byte[inputList.size()][];
 
@@ -490,16 +527,16 @@ public final class Main {
         ) {
             final ExecutorService executorService = autoCloseableExecutorServiceHolder.executorService();
             IntStream.range( 0, inputList.size() ).forEachOrdered( i -> {
-                final List<byte[]> inputs = new ArrayList<>( inputList );
+                final byte[][] inputs = inputList.toArray( new byte[inputList.size()][] );
                 final int index = i;
-                if ( options.has( "e" ) || options.has( "encrypt" ) ) {
+                if ( decryptInput ) {
                     executorService.submit( () ->
-                        outputs[index] = cryptosystem.encrypt( inputs.get( index ) )
+                        outputs[index] = cryptosystem.decrypt( inputs[index] )
                     );
                 }
-                else if ( options.has( "d" ) || options.has( "decrypt" ) ) {
+                else if ( encryptOutput ) {
                     executorService.submit( () ->
-                        outputs[index] = cryptosystem.decrypt( inputs.get( index ) )
+                        outputs[index] = cryptosystem.encrypt( inputs[index] )
                     );
                 }
             } );
@@ -511,9 +548,8 @@ public final class Main {
     @NotNull
     private static List<byte[]> processChunksConcurrentlyUsingRxJava(
         @NonNull final List<byte[]> inputList,
-        int threadCount,
-        @NonNull final Cryptosystem cryptosystem,
-        @NonNull final OptionSet options
+        boolean decryptInput, boolean encryptOutput, int threadCount,
+        @NonNull final Cryptosystem cryptosystem
     ) {
         final byte[][] outputs = new byte[inputList.size()][];
 
@@ -527,22 +563,22 @@ public final class Main {
             );
 
             IntStream.range( 0, inputList.size() ).forEachOrdered( i -> {
-                final List<byte[]> inputs = new ArrayList<>( inputList );
+                final byte[][] inputs = inputList.toArray( new byte[inputList.size()][] );
                 final int index = i;
-                if ( options.has( "e" ) || options.has( "encrypt" ) ) {
+                if ( decryptInput ) {
                     executorScheduler.scheduleDirect( () -> {
                         try {
-                            outputs[index] = cryptosystem.encrypt( inputs.get( index ) );
+                            outputs[index] = cryptosystem.decrypt( inputs[index] );
                         }
                         catch ( IOException e ) {
                             exit( e );
                         }
                     } );
                 }
-                else if ( options.has( "d" ) || options.has( "decrypt" ) ) {
+                else if ( encryptOutput ) {
                     executorScheduler.scheduleDirect( () -> {
                         try {
-                            outputs[index] = cryptosystem.decrypt( inputs.get( index ) );
+                            outputs[index] = cryptosystem.encrypt( inputs[index] );
                         }
                         catch ( IOException e ) {
                             exit( e );
