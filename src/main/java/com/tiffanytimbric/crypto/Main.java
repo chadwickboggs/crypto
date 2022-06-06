@@ -57,7 +57,30 @@ public final class Main {
     private static volatile OutputStreamWriter outputStreamWriter = null;
 
 
-    public static void main( @NotNull final String... args ) throws Exception {
+    /**
+     * Executes this program which reads its config, parses its command-line arguments,
+     * then executes its logic.  This programs logic consists of reading input from stdin,
+     * running the specified cryptosystem's encrypt or decrypt on it, then printing the
+     * resulting output to stdout.  Input is read in, processed, and output in lists of
+     * chunks.  The size of each chunk equals the key size which was specified or configured
+     * for specified cryptosystem.  The list of chunks equals the thread count which was
+     * specified or configured.
+     * <p>
+     *     <b>Program Steps</b>
+     * <ol>
+     *     <li>Setup: Read config, parse command-line arguments.</li>
+     *     <li>Execute program logic.
+     *      <ol>
+     *          <li>Input one threadCount sized list of chunks.</li>
+     *          <li>Process (encrypt/decrypt) the chunks.</li>
+     *          <li>Output the processed list of chunks.</li>
+     *      </ol>
+     *     </li>
+     * </ol>
+     *
+     * @param args command-line arguments.
+     */
+    public static void main( @NotNull final String... args ) {
         if ( args.length == 0 ) {
             System.err.println( usageMessage() );
 
@@ -66,7 +89,7 @@ public final class Main {
 
         try {
             //
-            // 0. Setup.
+            // 1. Setup: Read config, parse command-line arguments.
             //
             final OptionSet options = getCliParser().parse( args );
 
@@ -105,6 +128,9 @@ public final class Main {
 
             boolean useRxJava = options.has( "x" ) || options.has( "rxjava" );
 
+            //
+            // 2. Execute program logic.
+            //
             try (
                 final BufferedInputStream bufferedInputStream = getBufferedInputStream( System.in );
                 final InputStreamReader inputStreamReader = getInputStreamReader( bufferedInputStream )
@@ -115,7 +141,7 @@ public final class Main {
                 ) {
                     while ( true ) {
                         //
-                        // 1. Input one threadCount sized list of chunks.
+                        // 2.1. Input one threadCount sized list of chunks.
                         //
                         final List<byte[]> inputList = new ArrayList<>();
                         if ( base64DecodeInput ) {
@@ -136,7 +162,7 @@ public final class Main {
                         validateInputList( inputList );
 
                         //
-                        // 2. Process (encrypt/decrypt) the chunks.
+                        // 2.2. Process (encrypt/decrypt) the chunks.
                         //
                         List<byte[]> outputList = processChunks(
                             inputList, decryptInput, encryptOutput, threadCount, cryptosystem, useRxJava
@@ -144,7 +170,7 @@ public final class Main {
                         validateOutputList( outputList );
 
                         //
-                        // 3. Output the processed chunks.
+                        // 2.3. Output the processed list of chunks.
                         //
                         if ( base64EncodeOutput ) {
                             writeTextOutputList(
@@ -241,7 +267,7 @@ public final class Main {
     }
 
     @NotNull
-    public static String usageMessage() throws Exception {
+    public static String usageMessage() {
         try (
             final InputStream inputStream = NtrUtil.class.getClassLoader().getResourceAsStream( getUsageFilename() )
         ) {
@@ -269,6 +295,11 @@ public final class Main {
                 }
             }
         }
+        catch ( Throwable t ) {
+            exit( t );
+        }
+
+        return "";
     }
 
     public static void exit( @NotNull final Throwable t ) {
