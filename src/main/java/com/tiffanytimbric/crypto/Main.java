@@ -49,7 +49,6 @@ public final class Main {
     private static final String USAGE_FILENAME = "usage-cryptosystem.txt";
     private static final int DEFAULT_THREAD_COUNT = 1;
     private static String usageFilename = USAGE_FILENAME;
-    private static int threadCount = DEFAULT_THREAD_COUNT;
 
     private static volatile BufferedInputStream bufferedInputStream = null;
     private static volatile InputStreamReader inputStreamReader = null;
@@ -66,7 +65,7 @@ public final class Main {
      * for specified cryptosystem.  The list of chunks equals the thread count which was
      * specified or configured.
      * <p>
-     *     <b>Program Steps</b>
+     * <b>Program Steps</b>
      * <ol>
      *     <li>Setup: Read config, parse command-line arguments.</li>
      *     <li>Execute program logic.
@@ -91,42 +90,7 @@ public final class Main {
             //
             // 1. Setup: Read config, parse command-line arguments.
             //
-            final OptionSet options = getCliParser().parse( args );
-
-            if ( options.has( "?" ) || options.has( "h" ) || options.has( "u" )
-                || options.has( "help" ) || options.has( "usage" ) ) {
-                System.out.println( usageMessage() );
-
-                exit( ExitCode.SUCCESS );
-            }
-
-            if ( !options.has( "c" ) && !options.has( "cryptosystem" ) ) {
-                exit( ExitCode.MISSING_CLI_ARGUMENTS );
-            }
-            final String cryptosystemName = String.valueOf( options.valueOf( "c" ) );
-            final Cryptosystem cryptosystem = getCryptosystem( cryptosystemName );
-
-            if ( options.has( "k" ) || options.has( "key" ) ) {
-                if ( cryptosystemName.equals( CryptosystemName.NTRU.name() ) ) {
-                    exit( ExitCode.INVALID_ARGUMENT );
-                }
-
-                cryptosystem.setChunkSizeEncrypt( Integer.parseInt( options.valueOf( "k" ).toString() ) );
-                cryptosystem.setChunkSizeDecrypt( Integer.parseInt( options.valueOf( "k" ).toString() ) );
-            }
-
-            if ( options.has( "t" ) || options.has( "threads" ) ) {
-                threadCount = Integer.parseInt( options.valueOf( "t" ).toString() );
-            }
-
-            boolean decryptInput = options.has( "d" ) || options.has( "decrypt" );
-            boolean encryptOutput = options.has( "e" ) || options.has( "encrypt" );
-            int chunkSize = encryptOutput ? cryptosystem.getChunkSizeEncrypt() : cryptosystem.getChunkSizeDecrypt();
-
-            boolean base64DecodeInput = isBase64Decode( options );
-            boolean base64EncodeOutput = isBase64Encode( options );
-
-            boolean useRxJava = options.has( "x" ) || options.has( "rxjava" );
+            final Config config = loadConfig( getCliParser().parse( args ) );
 
             //
             // 2. Execute program logic.
@@ -144,16 +108,16 @@ public final class Main {
                         // 2.1. Input one threadCount sized list of chunks.
                         //
                         final List<byte[]> inputList = new ArrayList<>();
-                        if ( base64DecodeInput ) {
+                        if ( config.base64DecodeInput() ) {
                             inputList.addAll(
                                 Base64Util.decode(
-                                    inputTextChunks( threadCount, inputStreamReader )
+                                    inputTextChunks( config.threadCount(), inputStreamReader )
                                 )
                             );
                         }
                         else {
                             inputList.addAll(
-                                inputBinaryChunks( chunkSize, threadCount, bufferedInputStream )
+                                inputBinaryChunks( config.chunkSize(), config.threadCount(), bufferedInputStream )
                             );
                         }
                         if ( isEmpty( inputList ) ) {
@@ -164,15 +128,13 @@ public final class Main {
                         //
                         // 2.2. Process (encrypt/decrypt) the chunks.
                         //
-                        List<byte[]> outputList = processChunks(
-                            inputList, decryptInput, encryptOutput, threadCount, cryptosystem, useRxJava
-                        );
+                        List<byte[]> outputList = processChunks( inputList, config );
                         validateOutputList( outputList );
 
                         //
                         // 2.3. Output the processed list of chunks.
                         //
-                        if ( base64EncodeOutput ) {
+                        if ( config.base64EncodeOutput() ) {
                             writeTextOutputList(
                                 Base64Util.encode( outputList ), outputStreamWriter
                             );
@@ -193,6 +155,70 @@ public final class Main {
         }
 
         exit( ExitCode.SUCCESS );
+    }
+
+    @NotNull
+    private static Config loadConfig( @NotNull final OptionSet options ) {
+        final Action action = getAction( options );
+
+        if ( Action.INFO.equals( action ) ) {
+            System.out.println( usageMessage() );
+
+            exit( ExitCode.SUCCESS );
+        }
+
+        if ( !options.has( "c" ) && !options.has( "cryptosystem" ) ) {
+            exit( ExitCode.MISSING_CLI_ARGUMENTS );
+        }
+        final String cryptosystemName = String.valueOf( options.valueOf( "c" ) );
+        final Cryptosystem cryptosystem = getCryptosystem( cryptosystemName );
+
+        if ( options.has( "k" ) || options.has( "key" ) ) {
+            if ( cryptosystemName.equals( CryptosystemName.NTRU.name() ) ) {
+                exit( ExitCode.INVALID_ARGUMENT );
+            }
+
+            int keySize = Integer.parseInt( options.valueOf( "k" ).toString() );
+            cryptosystem.setChunkSizeEncrypt( keySize );
+            cryptosystem.setChunkSizeDecrypt( keySize );
+        }
+
+        int threadCount = DEFAULT_THREAD_COUNT;
+        if ( options.has( "t" ) || options.has( "threads" ) ) {
+            threadCount = Integer.parseInt( options.valueOf( "t" ).toString() );
+        }
+
+        int chunkSize = Action.ENCRYPT.equals( action )
+            ? cryptosystem.getChunkSizeEncrypt() : cryptosystem.getChunkSizeDecrypt();
+
+        boolean base64DecodeInput = isBase64Decode( options );
+        boolean base64EncodeOutput = isBase64Encode( options );
+
+        boolean useRxJava = options.has( "x" ) || options.has( "rxjava" );
+
+        return new Config(
+            action, cryptosystem, chunkSize, threadCount, base64DecodeInput, base64EncodeOutput, useRxJava
+        );
+    }
+
+    @Nullable
+    private static Action getAction( @NotNull final OptionSet options ) {
+        if ( options.has( "?" ) || options.has( "h" ) || options.has( "u" )
+            || options.has( "help" ) || options.has( "usage" ) ) {
+            return Action.INFO;
+        }
+
+        if ( options.has( "d" ) || options.has( "decrypt" ) ) {
+            return Action.DECRYPT;
+        }
+
+        if ( options.has( "e" ) || options.has( "encrypt" ) ) {
+            return Action.ENCRYPT;
+        }
+
+        exit( ExitCode.MISSING_CLI_ARGUMENTS );
+
+        return null;
     }
 
     private static void validateOutputList( @Nullable final List<byte[]> outputList ) throws ValidationException {
@@ -245,25 +271,13 @@ public final class Main {
     }
 
     private static boolean isBase64Encode( @NotNull final OptionSet options ) {
-        if (
-            (options.has( "e" ) || options.has( "encrypt" )) && (
-                options.has( "b" ) || options.has( "base64" ))
-        ) {
-            return true;
-        }
-
-        return false;
+        return (options.has( "e" ) || options.has( "encrypt" ))
+            && (options.has( "b" ) || options.has( "base64" ));
     }
 
     private static boolean isBase64Decode( @NotNull final OptionSet options ) {
-        if (
-            (options.has( "d" ) || options.has( "decrypt" ))
-                && (options.has( "b" ) || options.has( "base64" ))
-        ) {
-            return true;
-        }
-
-        return false;
+        return (options.has( "d" ) || options.has( "decrypt" ))
+            && (options.has( "b" ) || options.has( "base64" ));
     }
 
     @NotNull
@@ -403,6 +417,7 @@ public final class Main {
             char lastChar = Character.MIN_VALUE;
             do {
                 while ( (numCharsRead = inputStreamReader.read( charBuf )) == 0 ) {
+                    // Ignore.
                 }
                 if ( numCharsRead < 0 ) {
                     break;
@@ -501,40 +516,38 @@ public final class Main {
 
     @NotNull
     private static List<byte[]> processChunks(
-        @NotNull final List<byte[]> inputList,
-        boolean decryptInput, boolean encryptOutput, int threadCount,
-        @NotNull final Cryptosystem cryptosystem,
-        boolean useRxJava
+        @NotNull final List<byte[]> inputList, @NotNull final Config config
     ) {
-        if ( useRxJava ) {
-            return processChunksConcurrentlyUsingRxJava( inputList, decryptInput, encryptOutput, threadCount, cryptosystem );
+        if ( config.useRxJava() ) {
+            return processChunksConcurrentlyUsingRxJava( inputList, config );
         }
 
-        return processChunksConcurrently( inputList, decryptInput, encryptOutput, threadCount, cryptosystem );
+        return processChunksConcurrently( inputList, config );
     }
 
     @NotNull
     private static List<byte[]> processChunksConcurrently(
-        @NonNull final List<byte[]> inputList,
-        boolean decryptInput, boolean encryptOutput, int threadCount,
-        @NonNull final Cryptosystem cryptosystem
+        @NonNull final List<byte[]> inputList, @NotNull final Config config
     ) {
+        final Action action = config.action();
+        final Cryptosystem cryptosystem = config.cryptosystem();
+
         final byte[][] outputs = new byte[inputList.size()][];
 
         try (
             final AutoCloseableExecutorServiceHolder autoCloseableExecutorServiceHolder =
-                new AutoCloseableExecutorServiceHolder( Executors.newFixedThreadPool( threadCount ) )
+                new AutoCloseableExecutorServiceHolder( Executors.newFixedThreadPool( config.threadCount() ) )
         ) {
             final ExecutorService executorService = autoCloseableExecutorServiceHolder.executorService();
             IntStream.range( 0, inputList.size() ).forEachOrdered( i -> {
                 final byte[][] inputs = inputList.toArray( new byte[inputList.size()][] );
                 final int index = i;
-                if ( decryptInput ) {
+                if ( action.equals( Action.DECRYPT ) ) {
                     executorService.submit( () ->
                         outputs[index] = cryptosystem.decrypt( inputs[index] )
                     );
                 }
-                else if ( encryptOutput ) {
+                else if ( action.equals( Action.ENCRYPT ) ) {
                     executorService.submit( () ->
                         outputs[index] = cryptosystem.encrypt( inputs[index] )
                     );
@@ -547,15 +560,16 @@ public final class Main {
 
     @NotNull
     private static List<byte[]> processChunksConcurrentlyUsingRxJava(
-        @NonNull final List<byte[]> inputList,
-        boolean decryptInput, boolean encryptOutput, int threadCount,
-        @NonNull final Cryptosystem cryptosystem
+        @NonNull final List<byte[]> inputList, @NotNull final Config config
     ) {
+        final Action action = config.action();
+        final Cryptosystem cryptosystem = config.cryptosystem();
+
         final byte[][] outputs = new byte[inputList.size()][];
 
         try (
             final AutoCloseableExecutorServiceHolder autoCloseableExecutorServiceHolder =
-                new AutoCloseableExecutorServiceHolder( Executors.newFixedThreadPool( threadCount ) )
+                new AutoCloseableExecutorServiceHolder( Executors.newFixedThreadPool( config.threadCount() ) )
         ) {
             final ExecutorService executorService = autoCloseableExecutorServiceHolder.executorService();
             final ExecutorScheduler executorScheduler = new ExecutorScheduler(
@@ -565,7 +579,7 @@ public final class Main {
             IntStream.range( 0, inputList.size() ).forEachOrdered( i -> {
                 final byte[][] inputs = inputList.toArray( new byte[inputList.size()][] );
                 final int index = i;
-                if ( decryptInput ) {
+                if ( action.equals( Action.DECRYPT ) ) {
                     executorScheduler.scheduleDirect( () -> {
                         try {
                             outputs[index] = cryptosystem.decrypt( inputs[index] );
@@ -575,7 +589,7 @@ public final class Main {
                         }
                     } );
                 }
-                else if ( encryptOutput ) {
+                else if ( action.equals( Action.ENCRYPT ) ) {
                     executorScheduler.scheduleDirect( () -> {
                         try {
                             outputs[index] = cryptosystem.encrypt( inputs[index] );
@@ -618,6 +632,11 @@ public final class Main {
 
     public enum CryptosystemName {
         NOOP, XOR, NTRU
+    }
+
+
+    public enum Action {
+        INFO, ENCRYPT, DECRYPT
     }
 
 
