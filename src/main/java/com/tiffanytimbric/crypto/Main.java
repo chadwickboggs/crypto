@@ -81,8 +81,6 @@ public final class Main {
      */
     public static void main( @NotNull final String... args ) {
         if ( args.length == 0 ) {
-            System.err.println( usageMessage() );
-
             exit( ExitCode.MISSING_CLI_ARGUMENTS );
         }
 
@@ -328,14 +326,8 @@ public final class Main {
 
     public static void exit( int status, @NotNull final String message ) {
         if ( status != 0 ) {
-            try {
-                System.err.println( message );
-                System.err.println( usageMessage() );
-            }
-            catch ( Exception e ) {
-                e.printStackTrace();
-                status = 101;
-            }
+            System.err.println( message );
+            System.err.println( usageMessage() );
         }
 
         System.exit( status );
