@@ -108,9 +108,7 @@ public final class Main {
                         final List<byte[]> inputList = new ArrayList<>();
                         if ( config.base64DecodeInput() ) {
                             inputList.addAll(
-                                Base64Util.decode(
-                                    inputTextChunks( config.threadCount(), inputStreamReader )
-                                )
+                                Base64Util.decode( inputTextChunks( config.threadCount(), inputStreamReader ) )
                             );
                         }
                         else {
@@ -126,16 +124,14 @@ public final class Main {
                         //
                         // 2.2. Process (encrypt/decrypt) the chunks.
                         //
-                        List<byte[]> outputList = processChunks( inputList, config );
+                        final List<byte[]> outputList = processChunks( inputList, config );
                         validateOutputList( outputList );
 
                         //
                         // 2.3. Output the processed list of chunks.
                         //
                         if ( config.base64EncodeOutput() ) {
-                            writeTextOutputList(
-                                Base64Util.encode( outputList ), outputStreamWriter
-                            );
+                            writeTextOutputList( Base64Util.encode( outputList ), outputStreamWriter );
                         }
                         else {
                             writeOutputList( outputList, bufferedOutputStream );
