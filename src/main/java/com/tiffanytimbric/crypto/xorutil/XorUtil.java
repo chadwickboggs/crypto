@@ -1,14 +1,14 @@
 package com.tiffanytimbric.crypto.xorutil;
 
 import com.tiffanytimbric.crypto.CryptosystemBase;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 
 /**
@@ -30,7 +30,7 @@ public final class XorUtil extends CryptosystemBase {
     }
 
     private static void validateMessageLength(
-        @NotNull byte[] message, @NotNull byte[] key
+        @Nonnull byte[] message, @Nonnull byte[] key
     ) {
         if ( message.length > key.length ) {
             throw new RuntimeException( String.format(
@@ -40,18 +40,18 @@ public final class XorUtil extends CryptosystemBase {
         }
     }
 
-    @NotNull
-    public byte[] encrypt( @NotNull final byte[] message ) throws IOException {
+    @Nonnull
+    public byte[] encrypt( @Nonnull final byte[] message ) throws IOException {
         return xorMessage( message, getKey( getChunkSizeEncrypt() ) );
     }
 
-    @NotNull
-    public byte[] decrypt( @NotNull final byte[] bytes ) throws IOException {
+    @Nonnull
+    public byte[] decrypt( @Nonnull final byte[] bytes ) throws IOException {
         return xorMessage( bytes, getKey( getChunkSizeDecrypt() ) );
     }
 
-    @NotNull
-    private byte[] xorMessage( @NotNull byte[] message, @NotNull byte[] key ) {
+    @Nonnull
+    private byte[] xorMessage( @Nonnull byte[] message, @Nonnull byte[] key ) {
         validateMessageLength( message, key );
 
         final byte[] messageEncrypted = new byte[message.length];
@@ -62,7 +62,7 @@ public final class XorUtil extends CryptosystemBase {
         return messageEncrypted;
     }
 
-    @NotNull
+    @Nonnull
     private synchronized byte[] getKey( int chunkSize ) throws IOException {
         if ( key == null ) {
             key = readKey( chunkSize );
@@ -90,12 +90,12 @@ public final class XorUtil extends CryptosystemBase {
         Files.write( Paths.get( getKeyFilename( keySize ) ), getKey( keySize ) );
     }
 
-    @NotNull
+    @Nonnull
     private String getKeyFilename( int keySize ) {
         return String.format( "%s.%d", KEY_FILENAME, keySize );
     }
 
-    @NotNull
+    @Nonnull
     private byte[] generateKey( int keySize ) {
         final byte[] bytes = new byte[keySize];
         final SecureRandom secureRandom = new SecureRandom();

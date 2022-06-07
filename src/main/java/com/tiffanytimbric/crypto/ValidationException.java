@@ -1,6 +1,7 @@
 package com.tiffanytimbric.crypto;
 
-import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nonnull;
 
 
 public class ValidationException extends Exception {
@@ -11,22 +12,22 @@ public class ValidationException extends Exception {
         super();
     }
 
-    public ValidationException( @NotNull final String s ) {
+    public ValidationException( @Nonnull final String s ) {
         super( s );
     }
 
     public ValidationException(
-        @NotNull final String message, @NotNull final Throwable cause
+        @Nonnull final String message, @Nonnull final Throwable cause
     ) {
         super( message, cause );
     }
 
-    public ValidationException( @NotNull final Throwable cause ) {
+    public ValidationException( @Nonnull final Throwable cause ) {
         super( cause );
     }
 
     protected ValidationException(
-        @NotNull final String message, @NotNull final Throwable cause,
+        @Nonnull final String message, @Nonnull final Throwable cause,
         boolean enableSuppression, boolean writableStackTrace
     ) {
         super( message, cause, enableSuppression, writableStackTrace );

@@ -1,7 +1,8 @@
 package com.tiffanytimbric.crypto.nooputil;
 
 import com.tiffanytimbric.crypto.CryptosystemBase;
-import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nonnull;
 
 
 /**
@@ -17,13 +18,13 @@ public final class NoopUtil extends CryptosystemBase {
         super( DEFAULT_CHUNK_SIZE_ENCRYPT, DEFAULT_CHUNK_SIZE_DECRYPT );
     }
 
-    @NotNull
-    public byte[] encrypt( @NotNull final byte[] message ) {
+    @Nonnull
+    public byte[] encrypt( @Nonnull final byte[] message ) {
         return message;
     }
 
-    @NotNull
-    public byte[] decrypt( @NotNull final byte[] bytes ) {
+    @Nonnull
+    public byte[] decrypt( @Nonnull final byte[] bytes ) {
         return bytes;
     }
 

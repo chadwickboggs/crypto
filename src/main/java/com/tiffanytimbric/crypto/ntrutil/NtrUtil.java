@@ -6,12 +6,12 @@ import net.sf.ntru.encrypt.EncryptionParameters;
 import net.sf.ntru.encrypt.EncryptionPrivateKey;
 import net.sf.ntru.encrypt.EncryptionPublicKey;
 import net.sf.ntru.encrypt.NtruEncrypt;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import javax.annotation.Nonnull;
 
 
 /**
@@ -36,18 +36,18 @@ public final class NtrUtil extends CryptosystemBase {
     }
 
 
-    @NotNull
-    public byte[] encrypt( @NotNull final byte[] message ) throws IOException {
+    @Nonnull
+    public byte[] encrypt( @Nonnull final byte[] message ) throws IOException {
         return getNTRU().encrypt( message, getKeyPair().getPublic() );
     }
 
-    @NotNull
-    public byte[] decrypt( @NotNull final byte[] bytes ) throws IOException {
+    @Nonnull
+    public byte[] decrypt( @Nonnull final byte[] bytes ) throws IOException {
         return getNTRU().decrypt( bytes, getKeyPair() );
     }
 
 
-    @NotNull
+    @Nonnull
     private synchronized NtruEncrypt getNTRU() throws IOException {
         if ( ntru == null ) {
             loadNTRU();
@@ -56,7 +56,7 @@ public final class NtrUtil extends CryptosystemBase {
         return ntru;
     }
 
-    @NotNull
+    @Nonnull
     private synchronized EncryptionKeyPair getKeyPair() throws IOException {
         if ( keyPair == null ) {
             loadKeyPair();
@@ -65,7 +65,7 @@ public final class NtrUtil extends CryptosystemBase {
         return keyPair;
     }
 
-    @NotNull
+    @Nonnull
     private synchronized EncryptionParameters getEncryptionParameters() throws IOException {
         if ( encryptionParameters == null ) {
             loadEncryptionParameters();
@@ -130,18 +130,18 @@ public final class NtrUtil extends CryptosystemBase {
         }
     }
 
-    @NotNull
+    @Nonnull
     private EncryptionPublicKey loadEncryptionPublicKey(
-        @NotNull final File publicKeyFile
+        @Nonnull final File publicKeyFile
     ) throws IOException {
         try ( final FileInputStream pubKeyInputStream = new FileInputStream( publicKeyFile ) ) {
             return new EncryptionPublicKey( pubKeyInputStream );
         }
     }
 
-    @NotNull
+    @Nonnull
     private EncryptionPrivateKey loadEncryptionPrivateKey(
-        @NotNull final File privateKeyFile
+        @Nonnull final File privateKeyFile
     ) throws IOException {
         try ( final FileInputStream privKeyInputStream = new FileInputStream( privateKeyFile ) ) {
             return new EncryptionPrivateKey( privKeyInputStream );
