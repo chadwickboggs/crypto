@@ -17,7 +17,6 @@ line tool which reads/writes to/from stdin/stdout.
 Please read usage-<cryptosystem>.txt which you will find within the conf folder.
 
 ## Usage Examples
-
     `$ echo 'Hello, World!' | bin/crypto -c XOR -e | bin/crypto -c XOR -d`
 
     `$ wc -l lorem_ipsum_100.txt`
