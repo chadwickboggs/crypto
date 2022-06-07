@@ -1,5 +1,9 @@
 package com.tiffanytimbric.crypto;
 
+
+import javax.annotation.Nonnull;
+
+
 public class ValidationException extends Exception {
 
     static final long serialVersionUID = -3387516993124226948L;
@@ -8,19 +12,24 @@ public class ValidationException extends Exception {
         super();
     }
 
-    public ValidationException( String s ) {
+    public ValidationException( @Nonnull final String s ) {
         super( s );
     }
 
-    public ValidationException( String message, Throwable cause ) {
+    public ValidationException(
+        @Nonnull final String message, @Nonnull final Throwable cause
+    ) {
         super( message, cause );
     }
 
-    public ValidationException( Throwable cause ) {
+    public ValidationException( @Nonnull final Throwable cause ) {
         super( cause );
     }
 
-    protected ValidationException( String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace ) {
+    protected ValidationException(
+        @Nonnull final String message, @Nonnull final Throwable cause,
+        boolean enableSuppression, boolean writableStackTrace
+    ) {
         super( message, cause, enableSuppression, writableStackTrace );
     }
 }

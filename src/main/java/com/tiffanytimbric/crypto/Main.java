@@ -9,8 +9,6 @@ import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.internal.schedulers.ExecutorScheduler;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -33,6 +31,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 
 /**
@@ -79,7 +79,7 @@ public final class Main {
      *
      * @param args command-line arguments.
      */
-    public static void main( @NotNull final String... args ) {
+    public static void main( @Nonnull final String... args ) {
         if ( args.length == 0 ) {
             exit( ExitCode.MISSING_CLI_ARGUMENTS );
         }
@@ -108,9 +108,7 @@ public final class Main {
                         final List<byte[]> inputList = new ArrayList<>();
                         if ( config.base64DecodeInput() ) {
                             inputList.addAll(
-                                Base64Util.decode(
-                                    inputTextChunks( config.threadCount(), inputStreamReader )
-                                )
+                                Base64Util.decode( inputTextChunks( config.threadCount(), inputStreamReader ) )
                             );
                         }
                         else {
@@ -126,16 +124,14 @@ public final class Main {
                         //
                         // 2.2. Process (encrypt/decrypt) the chunks.
                         //
-                        List<byte[]> outputList = processChunks( inputList, config );
+                        final List<byte[]> outputList = processChunks( inputList, config );
                         validateOutputList( outputList );
 
                         //
                         // 2.3. Output the processed list of chunks.
                         //
                         if ( config.base64EncodeOutput() ) {
-                            writeTextOutputList(
-                                Base64Util.encode( outputList ), outputStreamWriter
-                            );
+                            writeTextOutputList( Base64Util.encode( outputList ), outputStreamWriter );
                         }
                         else {
                             writeOutputList( outputList, bufferedOutputStream );
@@ -155,8 +151,8 @@ public final class Main {
         exit( ExitCode.SUCCESS );
     }
 
-    @NotNull
-    private static Config loadConfig( @NotNull final OptionSet options ) {
+    @Nonnull
+    private static Config loadConfig( @Nonnull final OptionSet options ) {
         final Action action = getAction( options );
 
         if ( Action.INFO.equals( action ) ) {
@@ -200,7 +196,7 @@ public final class Main {
     }
 
     @Nullable
-    private static Action getAction( @NotNull final OptionSet options ) {
+    private static Action getAction( @Nonnull final OptionSet options ) {
         if ( options.has( "?" ) || options.has( "h" ) || options.has( "u" )
             || options.has( "help" ) || options.has( "usage" ) ) {
             return Action.INFO;
@@ -220,7 +216,7 @@ public final class Main {
     }
 
     private static void validateOutputList( @Nullable final List<byte[]> outputList ) throws ValidationException {
-        if ( outputList == null || outputList.isEmpty() ) {
+        if ( isEmpty( outputList ) ) {
             return;
         }
 
@@ -233,21 +229,21 @@ public final class Main {
     }
 
     private static void writeTextOutputList(
-        @NotNull final List<String> outputList,
-        @NotNull final OutputStreamWriter outputStreamWriter
+        @Nonnull final List<String> outputList,
+        @Nonnull final OutputStreamWriter outputStreamWriter
     ) {
         outputList.forEach( text -> writeTextOutput( text, outputStreamWriter ) );
     }
 
     private static void writeOutputList(
-        @NotNull final List<byte[]> outputList,
-        @NotNull final OutputStream outputStream
+        @Nonnull final List<byte[]> outputList,
+        @Nonnull final OutputStream outputStream
     ) {
         outputList.forEach( bytes -> writeOutput( bytes, outputStream ) );
     }
 
     private static void writeTextOutput(
-        @NotNull final String text, @NotNull final OutputStreamWriter outputStreamWriter
+        @Nonnull final String text, @Nonnull final OutputStreamWriter outputStreamWriter
     ) {
         try {
             outputStreamWriter.write( text );
@@ -258,7 +254,7 @@ public final class Main {
     }
 
     private static void writeOutput(
-        @NotNull final byte[] bytes, @NotNull final OutputStream outputStream
+        @Nonnull final byte[] bytes, @Nonnull final OutputStream outputStream
     ) {
         try {
             outputStream.write( bytes );
@@ -268,17 +264,17 @@ public final class Main {
         }
     }
 
-    private static boolean isBase64Encode( @NotNull final OptionSet options ) {
+    private static boolean isBase64Encode( @Nonnull final OptionSet options ) {
         return (options.has( "e" ) || options.has( "encrypt" ))
             && (options.has( "b" ) || options.has( "base64" ));
     }
 
-    private static boolean isBase64Decode( @NotNull final OptionSet options ) {
+    private static boolean isBase64Decode( @Nonnull final OptionSet options ) {
         return (options.has( "d" ) || options.has( "decrypt" ))
             && (options.has( "b" ) || options.has( "base64" ));
     }
 
-    @NotNull
+    @Nonnull
     public static String usageMessage() {
         try (
             final InputStream inputStream = NtrUtil.class.getClassLoader().getResourceAsStream( getUsageFilename() )
@@ -314,17 +310,17 @@ public final class Main {
         return "";
     }
 
-    public static void exit( @NotNull final Throwable t ) {
+    public static void exit( @Nonnull final Throwable t ) {
         t.printStackTrace();
 
         exit( ExitCode.EXCEPTION.ordinal(), t.getMessage() );
     }
 
-    public static void exit( @NotNull final ExitCode exitCode ) {
+    public static void exit( @Nonnull final ExitCode exitCode ) {
         exit( exitCode.ordinal(), exitCode.getMessage() );
     }
 
-    public static void exit( int status, @NotNull final String message ) {
+    public static void exit( int status, @Nonnull final String message ) {
         if ( status != 0 ) {
             System.err.println( message );
             System.err.println( usageMessage() );
@@ -341,9 +337,9 @@ public final class Main {
         Main.usageFilename = usageFilename;
     }
 
-    @NotNull
+    @Nonnull
     private static List<byte[]> inputBinaryChunks(
-        int chunkSize, int chunkCount, @NotNull final InputStream inputStream
+        int chunkSize, int chunkCount, @Nonnull final InputStream inputStream
     ) {
         final List<byte[]> cypherTexts = new ArrayList<>();
         IntStream.rangeClosed( 1, chunkCount ).forEachOrdered( count -> {
@@ -357,8 +353,8 @@ public final class Main {
     }
 
 
-    @NotNull
-    private static byte[] inputBinaryChunk( int chunkSize, @NotNull final InputStream inputStream ) {
+    @Nonnull
+    private static byte[] inputBinaryChunk( int chunkSize, @Nonnull final InputStream inputStream ) {
         try ( final ByteArrayOutputStream outputStream = new ByteArrayOutputStream() ) {
             int totalRead = 0;
             do {
@@ -383,9 +379,9 @@ public final class Main {
     }
 
 
-    @NotNull
+    @Nonnull
     private static List<String> inputTextChunks(
-        int chunkCount, @NotNull final InputStreamReader inputStreamReader
+        int chunkCount, @Nonnull final InputStreamReader inputStreamReader
     ) {
         final List<String> cypherTexts = new ArrayList<>();
         IntStream.rangeClosed( 1, chunkCount ).forEachOrdered( count -> {
@@ -400,8 +396,8 @@ public final class Main {
         return cypherTexts;
     }
 
-    @NotNull
-    private static String inputTextChunk( @NotNull final InputStreamReader inputStreamReader ) {
+    @Nonnull
+    private static String inputTextChunk( @Nonnull final InputStreamReader inputStreamReader ) {
         final StringBuilder buf = new StringBuilder();
         try {
             char[] charBuf = new char[1];
@@ -436,8 +432,8 @@ public final class Main {
         return buf.toString();
     }
 
-    @NotNull
-    private static synchronized InputStreamReader getInputStreamReader( @NotNull InputStream inputStream ) {
+    @Nonnull
+    private static synchronized InputStreamReader getInputStreamReader( @Nonnull InputStream inputStream ) {
         if ( inputStreamReader == null ) {
             inputStreamReader = new InputStreamReader( getBufferedInputStream( inputStream ) );
         }
@@ -446,7 +442,7 @@ public final class Main {
     }
 
     private static synchronized BufferedInputStream getBufferedInputStream(
-        @NotNull final InputStream inputStream
+        @Nonnull final InputStream inputStream
     ) {
         if ( bufferedInputStream == null ) {
             bufferedInputStream = new BufferedInputStream( inputStream );
@@ -455,9 +451,9 @@ public final class Main {
         return bufferedInputStream;
     }
 
-    @NotNull
+    @Nonnull
     private static synchronized OutputStreamWriter getOutputStreamWriter(
-        @NotNull final OutputStream outputStream
+        @Nonnull final OutputStream outputStream
     ) {
         if ( outputStreamWriter == null ) {
             outputStreamWriter = new OutputStreamWriter( getBufferedOutputStream( outputStream ) );
@@ -466,9 +462,9 @@ public final class Main {
         return outputStreamWriter;
     }
 
-    @NotNull
+    @Nonnull
     private static synchronized BufferedOutputStream getBufferedOutputStream(
-        @NotNull final OutputStream outputStream
+        @Nonnull final OutputStream outputStream
     ) {
         if ( bufferedOutputStream == null ) {
             bufferedOutputStream = new BufferedOutputStream( outputStream );
@@ -477,8 +473,8 @@ public final class Main {
         return bufferedOutputStream;
     }
 
-    @NotNull
-    private static Cryptosystem getCryptosystem( @NotNull final String cryptosystemName ) {
+    @Nonnull
+    private static Cryptosystem getCryptosystem( @Nonnull final String cryptosystemName ) {
         Cryptosystem cryptosystem = null;
         switch ( CryptosystemName.valueOf( cryptosystemName ) ) {
             case NOOP -> cryptosystem = new NoopUtil();
@@ -490,25 +486,25 @@ public final class Main {
         return cryptosystem;
     }
 
-    private static boolean validateInputList(
+    private static void validateInputList(
         @Nullable final List<byte[]> inputList
     ) throws ValidationException {
-        if ( isEmpty( inputList ) || inputList.get( 0 ).length == 0 ) {
-            throw new ValidationException(
-                "Invalid input data.  The input data's length must be greater than zero."
-            );
+        if ( !isEmpty( inputList ) && inputList.get( 0 ).length > 0 ) {
+            return;
         }
 
-        return true;
+        throw new ValidationException(
+            "Invalid input data.  The input data's length must be greater than zero."
+        );
     }
 
     private static boolean isEmpty( @Nullable List<byte[]> inputList ) {
         return inputList == null || inputList.isEmpty() || inputList.get( 0 ) == null;
     }
 
-    @NotNull
+    @Nonnull
     private static List<byte[]> processChunks(
-        @NotNull final List<byte[]> inputList, @NotNull final Config config
+        @Nonnull final List<byte[]> inputList, @Nonnull final Config config
     ) {
         if ( config.useRxJava() ) {
             return processChunksConcurrentlyUsingRxJava( inputList, config );
@@ -517,9 +513,9 @@ public final class Main {
         return processChunksConcurrently( inputList, config );
     }
 
-    @NotNull
+    @Nonnull
     private static List<byte[]> processChunksConcurrently(
-        @NonNull final List<byte[]> inputList, @NotNull final Config config
+        @NonNull final List<byte[]> inputList, @Nonnull final Config config
     ) {
         final Action action = config.action();
         final Cryptosystem cryptosystem = config.cryptosystem();
@@ -550,9 +546,9 @@ public final class Main {
         return Arrays.asList( outputs );
     }
 
-    @NotNull
+    @Nonnull
     private static List<byte[]> processChunksConcurrentlyUsingRxJava(
-        @NonNull final List<byte[]> inputList, @NotNull final Config config
+        @NonNull final List<byte[]> inputList, @Nonnull final Config config
     ) {
         final Action action = config.action();
         final Cryptosystem cryptosystem = config.cryptosystem();
@@ -603,7 +599,7 @@ public final class Main {
         return Arrays.asList( outputs );
     }
 
-    @NotNull
+    @Nonnull
     private static synchronized OptionParser getCliParser() {
         final OptionParser parser = new OptionParser( "+c:?e?d?b?k:?t:?x?h?u?" );
 
@@ -646,11 +642,11 @@ public final class Main {
 
         private final String message;
 
-        ExitCode( @NotNull final String message ) {
+        ExitCode( @Nonnull final String message ) {
             this.message = message;
         }
 
-        @NotNull
+        @Nonnull
         public String getMessage() {
             return message;
         }
@@ -662,11 +658,11 @@ public final class Main {
      * Java version 19.
      */
     private record AutoCloseableExecutorServiceHolder(
-        @NotNull ExecutorService executorService
+        @Nonnull ExecutorService executorService
     ) implements AutoCloseable {
 
         @Override
-        @NotNull
+        @Nonnull
         public ExecutorService executorService() {
             return executorService;
         }

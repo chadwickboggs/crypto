@@ -1,10 +1,9 @@
 package com.tiffanytimbric.crypto.ntrutil;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javax.annotation.Nonnull;
 
 
 /**
@@ -14,7 +13,7 @@ public final class Main {
 
     private static final String USAGE_FILENAME = "usage-ntru.txt";
 
-    public static void main( @NotNull final String... args ) throws Exception {
+    public static void main( @Nonnull final String... args ) throws Exception {
         com.tiffanytimbric.crypto.Main.setUsageFilename( USAGE_FILENAME );
 
         final List<String> extendedArgs = new ArrayList<>( Arrays.asList( args ) );
