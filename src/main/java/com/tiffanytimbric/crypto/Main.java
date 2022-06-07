@@ -220,7 +220,7 @@ public final class Main {
     }
 
     private static void validateOutputList( @Nullable final List<byte[]> outputList ) throws ValidationException {
-        if ( outputList == null || outputList.isEmpty() ) {
+        if ( isEmpty( outputList ) ) {
             return;
         }
 
@@ -490,16 +490,16 @@ public final class Main {
         return cryptosystem;
     }
 
-    private static boolean validateInputList(
+    private static void validateInputList(
         @Nullable final List<byte[]> inputList
     ) throws ValidationException {
-        if ( isEmpty( inputList ) || inputList.get( 0 ).length == 0 ) {
-            throw new ValidationException(
-                "Invalid input data.  The input data's length must be greater than zero."
-            );
+        if ( !isEmpty( inputList ) && inputList.get( 0 ).length > 0 ) {
+            return;
         }
 
-        return true;
+        throw new ValidationException(
+            "Invalid input data.  The input data's length must be greater than zero."
+        );
     }
 
     private static boolean isEmpty( @Nullable List<byte[]> inputList ) {
