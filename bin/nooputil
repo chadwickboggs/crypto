@@ -9,34 +9,35 @@ if [ "-g" == "${1}" ]; then
 fi
 
 nooputil_home="$(dirname ${0})"/..
-nooputil_homeutil_conf="${nooputil_home}"/conf
-nooputil_homeutil_dist="${nooputil_home}"/dist
-nooputil_homeutil_lib="${nooputil_home}"/lib
-nooputil_homeutil_out="${nooputil_home}"/out/production/crypto
+nooputil_conf="${nooputil_home}"/conf
+nooputil_dist="${nooputil_home}"/dist
+nooputil_lib="${nooputil_home}"/lib
+#nooputil_dev_build_folder="${nooputil_home}"/out/production/crypto
+nooputil_dev_build_folder="${crypto_home}"/target/classes
 
-nooputil_homeutil_dist_escaped="$(/bin/echo "${nooputil_homeutil_dist}" | /usr/bin/sed 's/\//\\\//g')"
-nooputil_homeutil_lib_escaped="$(/bin/echo "${nooputil_homeutil_lib}" | /usr/bin/sed 's/\//\\\//g')"
+nooputil_dist_escaped="$(/bin/echo "${nooputil_dist}" | /usr/bin/sed 's/\//\\\//g')"
+nooputil_lib_escaped="$(/bin/echo "${nooputil_lib}" | /usr/bin/sed 's/\//\\\//g')"
 
 #
 # Add distribution to classpath.
 #
 
-dists="${nooputil_homeutil_dist}/$(/bin/ls "${nooputil_homeutil_dist}" | /usr/bin/tr '\n' ':')"
-dists="$(/bin/echo ${dists} | /usr/bin/sed "s/:/:${nooputil_homeutil_dist_escaped}\//g")"
+dists="${nooputil_dist}/$(/bin/ls "${nooputil_dist}" | /usr/bin/tr '\n' ':')"
+dists="$(/bin/echo ${dists} | /usr/bin/sed "s/:/:${nooputil_dist_escaped}\//g")"
 
 #
 # Add all library dependencies to classpath.
 #
 
-libs="${nooputil_homeutil_lib}/$(/bin/ls "${nooputil_homeutil_lib}" | /usr/bin/tr '\n' ':')"
-cp="${dists}:$(/bin/echo ${libs} | /usr/bin/sed "s/:/:${nooputil_homeutil_lib_escaped}\//g")"
-cp="${nooputil_homeutil_out}:${cp}"
+libs="${nooputil_lib}/$(/bin/ls "${nooputil_lib}" | /usr/bin/tr '\n' ':')"
+cp="${dists}:$(/bin/echo ${libs} | /usr/bin/sed "s/:/:${nooputil_lib_escaped}\//g")"
+cp="${nooputil_dev_build_folder}:${cp}"
 
 #
 # Prepend configuration folder to classpath.
 #
 
-cp="${nooputil_homeutil_conf}:${cp}"
+cp="${nooputil_conf}:${cp}"
 
 #
 # Prepend development output folder to classpath.

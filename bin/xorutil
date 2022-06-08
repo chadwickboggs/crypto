@@ -12,7 +12,8 @@ xorutil_home="$(dirname ${0})"/..
 xorutil_homeutil_conf="${xorutil_home}"/conf
 xorutil_homeutil_dist="${xorutil_home}"/dist
 xorutil_homeutil_lib="${xorutil_home}"/lib
-xorutil_homeutil_out="${xorutil_home}"/out/production/crypto
+#xorutil_homeutil_dev_build_folder="${xorutil_home}"/out/production/crypto
+xorutil_dev_build_folder="${crypto_home}"/target/classes
 
 xorutil_homeutil_dist_escaped="$(/bin/echo "${xorutil_homeutil_dist}" | /usr/bin/sed 's/\//\\\//g')"
 xorutil_homeutil_lib_escaped="$(/bin/echo "${xorutil_homeutil_lib}" | /usr/bin/sed 's/\//\\\//g')"
@@ -30,7 +31,7 @@ dists="$(/bin/echo ${dists} | /usr/bin/sed "s/:/:${xorutil_homeutil_dist_escaped
 
 libs="${xorutil_homeutil_lib}/$(/bin/ls "${xorutil_homeutil_lib}" | /usr/bin/tr '\n' ':')"
 cp="${dists}:$(/bin/echo ${libs} | /usr/bin/sed "s/:/:${xorutil_homeutil_lib_escaped}\//g")"
-cp="${xorutil_homeutil_out}:${cp}"
+cp="${xorutil_homeutil_dev_build_folder}:${cp}"
 
 #
 # Prepend configuration folder to classpath.
