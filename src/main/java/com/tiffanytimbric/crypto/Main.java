@@ -1,8 +1,5 @@
 package com.tiffanytimbric.crypto;
 
-import com.tiffanytimbric.crypto.nooputil.NoopUtil;
-import com.tiffanytimbric.crypto.ntrutil.NtrUtil;
-import com.tiffanytimbric.crypto.xorutil.XorUtil;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Scheduler;
 import io.reactivex.rxjava3.core.Single;
@@ -25,8 +22,11 @@ import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +47,9 @@ import javax.annotation.Nullable;
 public final class Main {
 
     private static final String USAGE_FILENAME = "usage-cryptosystem.txt";
+    private static final String CONFIG_FILENAME = "config.properties";
+    private static final String PN_CRYPTOSYSTEM_NAMES = "crypto.cryptosystem_names";
+    public static final String PF_CRYPTOSYSTEMS_CLASSNAME = "crypto.cryptosystem.%s.classname";
     private static final int DEFAULT_THREAD_COUNT = 1;
     private static String usageFilename = USAGE_FILENAME;
 
@@ -152,7 +155,7 @@ public final class Main {
     }
 
     @Nonnull
-    private static Config loadConfig( @Nonnull final OptionSet options ) {
+    private static Config loadConfig( @Nonnull final OptionSet options ) throws ValidationException {
         final Action action = getAction( options );
 
         if ( Action.INFO.equals( action ) ) {
@@ -165,7 +168,12 @@ public final class Main {
             exit( ExitCode.MISSING_CLI_ARGUMENTS );
         }
         final String cryptosystemName = String.valueOf( options.valueOf( "c" ) );
-        final Cryptosystem cryptosystem = getCryptosystem( cryptosystemName );
+        final Cryptosystem cryptosystem = loadCryptosystems().get( cryptosystemName );
+        if ( cryptosystem == null ) {
+            throw new ValidationException( String.format(
+                "Specified cryptosystem not found.  Specified Cryptosystem: \"%s\"", cryptosystemName
+            ) );
+        }
 
         if ( options.has( "k" ) || options.has( "key" ) ) {
             if ( cryptosystemName.equals( CryptosystemName.NTRU.name() ) ) {
@@ -193,6 +201,35 @@ public final class Main {
         return new Config(
             action, cryptosystem, chunkSize, threadCount, base64DecodeInput, base64EncodeOutput, useRxJava
         );
+    }
+
+    @Nonnull
+    private static Map<String, Cryptosystem> loadCryptosystems() {
+        final Map<String, Cryptosystem> cryptosystems = new HashMap<>();
+        try {
+            final Properties properties = new Properties();
+            properties.load( Main.class.getClassLoader().getResourceAsStream( CONFIG_FILENAME ) );
+            final String crytosystemNames = properties.getProperty( PN_CRYPTOSYSTEM_NAMES );
+            Arrays.stream( crytosystemNames.split( "\\," ) ).forEach( cryptosystemName -> {
+                try {
+                    final String cryptosystemClassname = properties.getProperty( String.format(
+                        PF_CRYPTOSYSTEMS_CLASSNAME, cryptosystemName
+                    ) );
+
+                    final Cryptosystem cryptosystem = (Cryptosystem) Main.class.getClassLoader()
+                        .loadClass( cryptosystemClassname ).getConstructor().newInstance();
+                    cryptosystems.put( cryptosystemName, cryptosystem );
+                }
+                catch ( Throwable t ) {
+                    exit( t );
+                }
+            } );
+        }
+        catch ( Throwable t ) {
+            exit( t );
+        }
+
+        return cryptosystems;
     }
 
     @Nullable
@@ -277,7 +314,7 @@ public final class Main {
     @Nonnull
     public static String usageMessage() {
         try (
-            final InputStream inputStream = NtrUtil.class.getClassLoader().getResourceAsStream( getUsageFilename() )
+            final InputStream inputStream = Main.class.getClassLoader().getResourceAsStream( getUsageFilename() )
         ) {
             if ( inputStream == null ) {
                 exit( ExitCode.MISSING_RESOURCE );
@@ -471,19 +508,6 @@ public final class Main {
         }
 
         return bufferedOutputStream;
-    }
-
-    @Nonnull
-    private static Cryptosystem getCryptosystem( @Nonnull final String cryptosystemName ) {
-        Cryptosystem cryptosystem = null;
-        switch ( CryptosystemName.valueOf( cryptosystemName ) ) {
-            case NOOP -> cryptosystem = new NoopUtil();
-            case XOR -> cryptosystem = new XorUtil();
-            case NTRU -> cryptosystem = new NtrUtil();
-            default -> exit( ExitCode.UNRECOGNIZED_ARGUMENT_VALUE );
-        }
-
-        return cryptosystem;
     }
 
     private static void validateInputList(
