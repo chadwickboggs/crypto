@@ -17,15 +17,35 @@ line tool which reads/writes to/from stdin/stdout.
 Please read usage-<cryptosystem>.txt which you will find within the conf folder.
 
 ## Usage Examples
-    `$ echo 'Hello, World!' | bin/crypto -c XOR -e | bin/crypto -c XOR -d`
+### Encrypting Streams
 
-    `$ wc -l lorem_ipsum_100.txt`
+    $ echo 'Hello, World!' | bin/crypto -c XOR -e | bin/crypto -c XOR -d
 
-    `$ cat lorem_ipsum_100.txt | bin/crypto -c XOR -e | bin/crypto -c XOR -d | wc -l`
-    `$ cat lorem_ipsum_100.txt | bin/xorutil -e | bin/xorutil -d | wc -l`
+### Encrypting Files
 
-    `$ cat lorem_ipsum_100.txt | bin/crypto -c NTRU -e | bin/crypto -c NTRU -d | wc -l`
-    `$ cat lorem_ipsum_100.txt | bin/ntrutil -e | bin/ntrutil -d | wc -l`
+    $ wc -l lorem_ipsum_100.txt
+
+    $ cat lorem_ipsum_100.txt | bin/crypto -c XOR -e | bin/crypto -c XOR -d > /tmp/a_file.txt && wc -l lorem_ipsum_100.txt /tmp/a_file.txt && diff -q lorem_ipsum_100.txt /tmp/a_file.txt
+    $ rm /tmp/a_file.txt
+
+    $ cat lorem_ipsum_100.txt | bin/xorutil -e | bin/xorutil -d  > /tmp/a_file.txt && wc -l lorem_ipsum_100.txt /tmp/a_file.txt && diff -q lorem_ipsum_100.txt /tmp/a_file.txt
+    $ rm /tmp/a_file.txt
+
+    $ cat lorem_ipsum_100.txt | bin/crypto -c NTRU -e | bin/crypto -c NTRU -d  > /tmp/a_file.txt && wc -l lorem_ipsum_100.txt /tmp/a_file.txt && diff -q lorem_ipsum_100.txt /tmp/a_file.txt
+    $ rm /tmp/a_file.txt
+
+    $ cat lorem_ipsum_100.txt | bin/ntrutil -e | bin/ntrutil -d  > /tmp/a_file.txt && wc -l lorem_ipsum_100.txt /tmp/a_file.txt && diff -q lorem_ipsum_100.txt /tmp/a_file.txt
+    $ rm /tmp/a_file.txt
+
+### Encrypting Tar Archives
+
+    $ cp -v lorem_ipsum_100.txt lorem_ipsum_100.2.txt
+    $ tar -I 'crypto -c XOR -e' -cf lorem_ipsum_100.2.txt.txor lorem_ipsum_100.2.txt
+    $ rm lorem_ipsum_100.2.txt
+
+    $ tar -I 'crypto -c XOR' -xf lorem_ipsum_100.2.txt.txor
+    $ diff -q lorem_ipsum_100.txt lorem_ipsum_100.2.txt
+    $ rm lorem_ipsum_100.2.txt*
 
 ## Code Analysis
 This Java code includes two separate implementation techiques for
