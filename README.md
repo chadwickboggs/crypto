@@ -14,9 +14,14 @@ line tool which reads/writes to/from stdin/stdout.
   * decrypt(...)
 
 ## Command Line Usage
-Please read usage-<cryptosystem>.txt which you will find within the conf folder.
+Please read usage-<cryptosystem>.txt which you will find within the conf
+folder.
 
 ## Usage Examples
+You may want to add the path to this project's "bin" to your shell's PATH
+environment variable.  The below examples assume the current working directory
+(CWD) of the shell equals the root folder of this project.
+
 ### Encrypting Streams
 
     $ echo 'Hello, World!' | bin/crypto -c XOR -e | bin/crypto -c XOR -d
@@ -40,10 +45,10 @@ Please read usage-<cryptosystem>.txt which you will find within the conf folder.
 ### Encrypting Tar Archives
 
     $ cp -v lorem_ipsum_100.txt lorem_ipsum_100.2.txt
-    $ tar -I 'crypto -c XOR -e' -cf lorem_ipsum_100.2.txt.txor lorem_ipsum_100.2.txt
+    $ tar -I 'bin/crypto -c XOR -e' -cf lorem_ipsum_100.2.txt.txor lorem_ipsum_100.2.txt
     $ rm lorem_ipsum_100.2.txt
 
-    $ tar -I 'crypto -c XOR' -xf lorem_ipsum_100.2.txt.txor
+    $ tar -I 'bin/crypto -c XOR' -xf lorem_ipsum_100.2.txt.txor
     $ diff -q lorem_ipsum_100.txt lorem_ipsum_100.2.txt
     $ rm lorem_ipsum_100.2.txt*
 
