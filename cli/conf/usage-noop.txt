@@ -1,11 +1,11 @@
 
 DESCRIPTION:
 
-    Encrypts or decrypts using the XOR cryptosystem.  Input gets read from
+    Encrypts or decrypts using the NOOP cryptosystem.  Input gets read from
     STDIN.  Output gets written to STDOUT.
 
-    XOR is a single/shared key cryptosystem.  Its key and encryption parameters
-    get stored in the "~/.xorutil" folder.
+    NOOP is a no-operation/passthrough cryptosystem.  Its output simply echos
+    its input.
 
 USAGE:
 
