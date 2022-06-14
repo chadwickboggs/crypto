@@ -22,6 +22,8 @@ You may want to add the path to this project's "bin" to your shell's PATH
 environment variable.  The below examples assume the current working directory
 (CWD) of the shell equals the "cli" folder of this project.
 
+    $ cd "${CRYPTO_HOME}/cli"
+
 ### Encrypting Streams
 
     $ echo 'Hello, World!' | bin/crypto -c XOR -e | bin/crypto -c XOR -d
