@@ -1,0 +1,25 @@
+
+DESCRIPTION:
+
+    Encrypts or decrypts using the NOOP cryptosystem.  Input gets read from
+    STDIN.  Output gets written to STDOUT.
+
+    NOOP is a no-operation/passthrough cryptosystem.  Its output simply echos
+    its input.
+
+USAGE:
+
+    $ noop <options>
+
+NOTE: You may press CTRL-D twice to end the input stream.
+
+    Options
+
+	-e   | --encrypt        Encrypt from stdin to stdout.
+	-d   | --decrypt        Decrypt from stdin to stdout.
+	-b   | --base64         Base64 encode encryption output or Base64 decode decryption input.
+	-t   | --threads        Use specified number of system threads [Default: 1].
+	-k   | --key            The byte length of the shared key to use [Default: 64].
+	-x   | --rxjava         Use the RxJava (Reactive eXtension).
+	-h   | --help           Display usage information.
+	-?   | -u | --usage     Display usage information.
