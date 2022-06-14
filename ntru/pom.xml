@@ -2,36 +2,33 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.tiffanytimbric</groupId>
+        <artifactId>crypto</artifactId>
+        <version>1.3.0-SNAPSHOT</version>
+    </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.tiffanytimbric</groupId>
-    <artifactId>crypto</artifactId>
-    <packaging>pom</packaging>
+    <groupId>com.tiffanytimbric.crypto</groupId>
+    <artifactId>ntru</artifactId>
     <version>1.3.0-SNAPSHOT</version>
-
-    <modules>
-        <module>api</module>
-        <module>cli</module>
-        <module>noop</module>
-        <module>xor</module>
-        <module>ntru</module>
-    </modules>
 
     <properties>
         <maven.compiler.source>18</maven.compiler.source>
         <maven.compiler.target>18</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-            <version>1.3.2</version>
+            <groupId>com.tiffanytimbric.crypto</groupId>
+            <artifactId>api</artifactId>
+            <version>1.3.0-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-            <version>3.0.2</version>
+            <groupId>net.sf.ntru</groupId>
+            <artifactId>ntru</artifactId>
+            <version>1.2</version>
         </dependency>
     </dependencies>
 

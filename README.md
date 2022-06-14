@@ -20,7 +20,7 @@ folder.
 ## Usage Examples
 You may want to add the path to this project's "bin" to your shell's PATH
 environment variable.  The below examples assume the current working directory
-(CWD) of the shell equals the root folder of this project.
+(CWD) of the shell equals the "cli" folder of this project.
 
 ### Encrypting Streams
 
