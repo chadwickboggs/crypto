@@ -9,7 +9,7 @@ DESCRIPTION:
 
 USAGE:
 
-    $ noop <options>
+    $ crypto -c NOOP <options>
 
 NOTE: You may press CTRL-D twice to end the input stream.
 

@@ -9,7 +9,7 @@ DESCRIPTION:
 
 USAGE:
 
-    $ xor <options>
+    $ crypto -c XOR <options>
 
 NOTE: You may press CTRL-D twice to the the input stream.
 

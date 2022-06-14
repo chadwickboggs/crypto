@@ -1,4 +1,4 @@
-package com.tiffanytimbric.crypto.nooputil;
+package com.tiffanytimbric.crypto.noop;
 
 import com.tiffanytimbric.crypto.api.CryptosystemBase;
 
@@ -8,13 +8,13 @@ import javax.annotation.Nonnull;
 /**
  * This class implements NOOP encryption/decryption.
  */
-public final class NoopUtil extends CryptosystemBase {
+public final class NoopCryptosystem extends CryptosystemBase {
 
     public static final int DEFAULT_CHUNK_SIZE_ENCRYPT = 65536;
     public static final int DEFAULT_CHUNK_SIZE_DECRYPT = 65536;
 
 
-    public NoopUtil() {
+    public NoopCryptosystem() {
         super( DEFAULT_CHUNK_SIZE_ENCRYPT, DEFAULT_CHUNK_SIZE_DECRYPT );
     }
 
