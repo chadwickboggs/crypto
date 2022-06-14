@@ -1,4 +1,4 @@
-package com.tiffanytimbric.crypto.ntrutil;
+package com.tiffanytimbric.crypto.ntru;
 
 import com.tiffanytimbric.crypto.api.CryptosystemBase;
 import net.sf.ntru.encrypt.EncryptionKeyPair;
@@ -18,7 +18,7 @@ import javax.annotation.Nonnull;
  * This class implements NTRU encryption/decryption.  It store its NTRU
  * encryption parameters and keys in the "~/.ntrutil" folder.
  */
-public final class NtrUtil extends CryptosystemBase {
+public final class NtrCryptosystem extends CryptosystemBase {
 
     public static final int DEFAULT_CHUNK_SIZE_ENCRYPT = 64;
     public static final int DEFAULT_CHUNK_SIZE_DECRYPT = 604;
@@ -31,7 +31,7 @@ public final class NtrUtil extends CryptosystemBase {
     private volatile EncryptionKeyPair keyPair = null;
 
 
-    public NtrUtil() {
+    public NtrCryptosystem() {
         super( DEFAULT_CHUNK_SIZE_ENCRYPT, DEFAULT_CHUNK_SIZE_DECRYPT );
     }
 

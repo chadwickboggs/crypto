@@ -3,13 +3,13 @@ Crypto may be used as a library to encrypt/decrypt data or called as a command
 line tool which reads/writes to/from stdin/stdout.
 
 ## Library Methods
-* com.tiffanytimbric.crypto.ntrutil.NtrUtil
+* com.tiffanytimbric.crypto.ntru.NtrCryptosystem
   * encrypt(...)
   * decrypt(...)
-* com.tiffanytimbric.crypto.nooputil.XorUtil
+* com.tiffanytimbric.crypto.noop.XorCryptosystem
   * encrypt(...)
   * decrypt(...)
-* com.tiffanytimbric.crypto.nooputil.NoopUtil
+* com.tiffanytimbric.crypto.noop.NoopCryptosystem
   * encrypt(...)
   * decrypt(...)
 
@@ -35,13 +35,13 @@ environment variable.  The below examples assume the current working directory
     $ cat lorem_ipsum_100.txt | bin/crypto -c XOR -e | bin/crypto -c XOR -d > /tmp/a_file.txt && wc -l lorem_ipsum_100.txt /tmp/a_file.txt && diff -q lorem_ipsum_100.txt /tmp/a_file.txt
     $ rm /tmp/a_file.txt
 
-    $ cat lorem_ipsum_100.txt | bin/xorutil -e | bin/xorutil -d  > /tmp/a_file.txt && wc -l lorem_ipsum_100.txt /tmp/a_file.txt && diff -q lorem_ipsum_100.txt /tmp/a_file.txt
+    $ cat lorem_ipsum_100.txt | bin/crypto -c XOR -e | bin/crypto -c XOR -d  > /tmp/a_file.txt && wc -l lorem_ipsum_100. txt /tmp/a_file.txt && diff -q lorem_ipsum_100.txt /tmp/a_file.txt
     $ rm /tmp/a_file.txt
 
     $ cat lorem_ipsum_100.txt | bin/crypto -c NTRU -e | bin/crypto -c NTRU -d  > /tmp/a_file.txt && wc -l lorem_ipsum_100.txt /tmp/a_file.txt && diff -q lorem_ipsum_100.txt /tmp/a_file.txt
     $ rm /tmp/a_file.txt
 
-    $ cat lorem_ipsum_100.txt | bin/ntrutil -e | bin/ntrutil -d  > /tmp/a_file.txt && wc -l lorem_ipsum_100.txt /tmp/a_file.txt && diff -q lorem_ipsum_100.txt /tmp/a_file.txt
+    $ cat lorem_ipsum_100.txt | bin/crypto -c NTRU -e | bin/crypto -c NTRU -d  > /tmp/a_file.txt && wc -l lorem_ipsum_100.txt /tmp/a_file.txt && diff -q lorem_ipsum_100.txt /tmp/a_file.txt
     $ rm /tmp/a_file.txt
 
 ### Encrypting Tar Archives
