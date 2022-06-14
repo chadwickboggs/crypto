@@ -1,4 +1,4 @@
-package com.tiffanytimbric.crypto.xorutil;
+package com.tiffanytimbric.crypto.xor;
 
 import com.tiffanytimbric.crypto.api.CryptosystemBase;
 
@@ -15,7 +15,7 @@ import javax.annotation.Nullable;
  * This class implements XOR encryption/decryption.  It store its XOR
  * encryption parameters and keys in the "~/.xorutil" folder.
  */
-public final class XorUtil extends CryptosystemBase {
+public final class XorCryptosystem extends CryptosystemBase {
 
     public static final int DEFAULT_CHUNK_SIZE_ENCRYPT = 65536;
     public static final int DEFAULT_CHUNK_SIZE_DECRYPT = 65536;
@@ -25,7 +25,7 @@ public final class XorUtil extends CryptosystemBase {
     private volatile byte[] key = null;
 
 
-    public XorUtil() {
+    public XorCryptosystem() {
         super( DEFAULT_CHUNK_SIZE_ENCRYPT, DEFAULT_CHUNK_SIZE_DECRYPT );
     }
 

@@ -9,7 +9,7 @@ DESCRIPTION:
 
 USAGE:
 
-    $ ntrutil <options>
+    $ crypto -c NTRU <options>
 
 NOTE: You may press CTRL-D twice to end the input stream.
 
