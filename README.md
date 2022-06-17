@@ -54,6 +54,10 @@ environment variable.  The below examples assume the current working directory
     $ diff -q lorem_ipsum_100.txt lorem_ipsum_100.2.txt
     $ rm lorem_ipsum_100.2.txt*
 
+### Base64 Encoding Files
+
+    $ cat lorem_ipsum_5.txt | bin/crypto -c NOOP -e -b > lorem_ipsum_t.txt.base65 && cat lorem_ipsum_5.txt.base64 | bin/crypto -c NOOP -d -b
+
 ## Code Analysis
 This Java code includes two separate implementation techiques for
 multi-threaded/concurrent processing, one using the JDK's ExecutorServices and
