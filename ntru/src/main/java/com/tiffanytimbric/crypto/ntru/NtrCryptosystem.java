@@ -167,9 +167,4 @@ public final class NtrCryptosystem extends CryptosystemBase {
             return new EncryptionPrivateKey( privKeyInputStream );
         }
     }
-
-    @Override
-    public boolean isUseChunkSize() {
-        return true;
-    }
 }

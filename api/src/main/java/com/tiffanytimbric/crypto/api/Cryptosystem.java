@@ -22,5 +22,4 @@ public interface Cryptosystem {
     @Nonnull
     byte[] decrypt( @Nonnull final byte[] message ) throws IOException;
 
-    boolean isUseChunkSize();
 }

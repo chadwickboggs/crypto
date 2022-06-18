@@ -13,9 +13,13 @@ public final class NoopCryptosystem extends CryptosystemBase {
     public static final int DEFAULT_CHUNK_SIZE_ENCRYPT = 65536;
     public static final int DEFAULT_CHUNK_SIZE_DECRYPT = 65536;
 
-
     public NoopCryptosystem() {
         super( DEFAULT_CHUNK_SIZE_ENCRYPT, DEFAULT_CHUNK_SIZE_DECRYPT );
+    }
+
+    @Override
+    public void init( boolean isBaseNEncode, boolean isBaseNDecode, int baseN ) {
+        // Do nothing.
     }
 
     @Nonnull

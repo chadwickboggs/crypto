@@ -12,11 +12,6 @@ public abstract class CryptosystemBase implements Cryptosystem {
     }
 
     @Override
-    public void init( boolean isBaseNEncode, boolean isBaseNDecode, int baseN ) {
-        // Do nothing.
-    }
-
-    @Override
     public int getChunkSizeEncrypt() {
         return chunkSizeEncrypt;
     }
@@ -36,8 +31,4 @@ public abstract class CryptosystemBase implements Cryptosystem {
         this.chunkSizeDecrypt = chunkSizeDecrypt;
     }
 
-    @Override
-    public boolean isUseChunkSize() {
-        return false;
-    }
 }

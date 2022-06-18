@@ -113,8 +113,8 @@ public final class Main {
                             inputList.addAll(
                                 baseNDecode(
                                     inputTextChunks(
-                                        config.threadCount(), config.chunkSize(), config.baseN(), inputStreamReader,
-                                        config.cryptosystem().isUseChunkSize()
+                                        config.chunkSize(), config.threadCount(), config.baseNDecodeInput(),
+                                        config.baseN(), inputStreamReader
                                     ),
                                     config.baseN()
                                 )
@@ -487,12 +487,12 @@ public final class Main {
 
     @Nonnull
     private static List<String> inputTextChunks(
-        int chunkCount, int chunkSize, int baseN, @Nonnull final InputStreamReader inputStreamReader,
-        boolean useChunkSize
+        int chunkSize, int chunkCount, boolean baseNDecodeInput, int baseN,
+        @Nonnull final InputStreamReader inputStreamReader
     ) {
         final List<String> cypherTexts = new ArrayList<>();
         IntStream.rangeClosed( 1, chunkCount ).forEachOrdered( count -> {
-            String cypherText = inputTextChunk( inputStreamReader, chunkSize, baseN, useChunkSize );
+            final String cypherText = inputTextChunk( chunkSize, baseNDecodeInput, baseN, inputStreamReader );
             if ( cypherText.length() == 0 ) {
                 return;
             }
@@ -505,7 +505,7 @@ public final class Main {
 
     @Nonnull
     private static String inputTextChunk(
-        @Nonnull final InputStreamReader inputStreamReader, int chunkSize, int baseN, boolean useChunkSize
+        int chunkSize, boolean baseNDecodeInput, int baseN, @Nonnull final InputStreamReader inputStreamReader
     ) {
         final StringBuilder buf = new StringBuilder();
         try {
@@ -529,15 +529,18 @@ public final class Main {
                 );
 
                 char currentChar = charBuf[numCharsRead - 1];
-                if ( 16 == baseN && buf.length() == chunkSize && useChunkSize ) {
-                    break;
+                if ( baseNDecodeInput ) {
+                    if ( 16 == baseN && buf.length() == chunkSize ) {
+                        break;
+                    }
+                    else if ( 32 == baseN && currentChar == '=' ) {
+                        break;
+                    }
+                    else if ( 64 == baseN && currentChar == '=' && lastChar == '=' ) {
+                        break;
+                    }
                 }
-                else if ( 32 == baseN && currentChar == '=' ) {
-                    break;
-                }
-                else if ( 64 == baseN && currentChar == '=' && lastChar == '=' ) {
-                    break;
-                }
+
                 lastChar = currentChar;
             }
             while ( true );
