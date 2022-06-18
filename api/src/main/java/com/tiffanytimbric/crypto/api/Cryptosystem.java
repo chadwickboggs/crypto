@@ -6,6 +6,8 @@ import javax.annotation.Nonnull;
 
 public interface Cryptosystem {
 
+    void init( boolean isBaseNEncode, boolean isBaseNDecode, int baseN );
+
     int getChunkSizeEncrypt();
 
     void setChunkSizeEncrypt( int chunkSizeEncrypt );
@@ -20,4 +22,5 @@ public interface Cryptosystem {
     @Nonnull
     byte[] decrypt( @Nonnull final byte[] message ) throws IOException;
 
+    boolean isUseChunkSize();
 }
