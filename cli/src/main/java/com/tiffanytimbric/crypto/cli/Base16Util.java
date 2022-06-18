@@ -1,7 +1,6 @@
 package com.tiffanytimbric.crypto.cli;
 
 import org.apache.commons.codec.binary.Base16;
-import org.apache.commons.codec.binary.Base32;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;

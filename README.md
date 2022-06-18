@@ -54,9 +54,9 @@ environment variable.  The below examples assume the current working directory
     $ diff -q lorem_ipsum_100.txt lorem_ipsum_100.2.txt
     $ rm lorem_ipsum_100.2.txt*
 
-### Base64 Encoding Files
+### Base<16|32|64> Encoding Files
 
-    $ cat lorem_ipsum_5.txt | bin/crypto -c NOOP -e -b > lorem_ipsum_t.txt.base65 && cat lorem_ipsum_5.txt.base64 | bin/crypto -c NOOP -d -b
+    $ cat lorem_ipsum_5.txt | bin/crypto -c NOOP -e -b 64 > lorem_ipsum_t.txt.base65 && cat lorem_ipsum_5.txt.base64 | bin/crypto -c NOOP -d -b 64
 
 ## Code Analysis
 This Java code includes two separate implementation techiques for

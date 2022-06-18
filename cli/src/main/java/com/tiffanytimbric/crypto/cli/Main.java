@@ -43,14 +43,14 @@ import javax.annotation.Nullable;
  * <b>Presently Supported Cryptosystems:</b> NOOP, XOR, NTRU
  * <p>
  * Input gets read from stdin.  Output gets written to stdout.  Encryption
- * output may be Base64 encoded.  Decryption input may be Base64 encoded.
+ * output may be BaseN encoded.  Decryption input may be BaseN decoded.
  */
 public final class Main {
 
+    public static final String PF_CRYPTOSYSTEMS_CLASSNAME = "crypto.cryptosystem.%s.classname";
     private static final String USAGE_FILENAME_FORMAT = "usage-%s.txt";
     private static final String CONFIG_FILENAME = "config.properties";
     private static final String PN_CRYPTOSYSTEM_NAMES = "crypto.cryptosystem_names";
-    public static final String PF_CRYPTOSYSTEMS_CLASSNAME = "crypto.cryptosystem.%s.classname";
     private static final int DEFAULT_THREAD_COUNT = 1;
 
     private static volatile BufferedInputStream bufferedInputStream = null;
@@ -288,7 +288,7 @@ public final class Main {
 
                     final Cryptosystem cryptosystem = (Cryptosystem) Main.class.getClassLoader()
                         .loadClass( cryptosystemClassname ).getConstructor().newInstance();
-                    cryptosystem.init( isBaseNEncode, isBaseNDecode, baseN);
+                    cryptosystem.init( isBaseNEncode, isBaseNDecode, baseN );
                     cryptosystems.put( cryptosystemName, cryptosystem );
                 }
                 catch ( Throwable t ) {
@@ -374,12 +374,12 @@ public final class Main {
 
     private static boolean isBaseNEncode( @Nonnull final OptionSet options ) {
         return (options.has( "e" ) || options.has( "encrypt" ))
-            && (options.has( "b" ) || options.has( "base64" ));
+            && (options.has( "b" ) || options.has( "baseN" ));
     }
 
     private static boolean isBaseNDecode( @Nonnull final OptionSet options ) {
         return (options.has( "d" ) || options.has( "decrypt" ))
-            && (options.has( "b" ) || options.has( "base64" ));
+            && (options.has( "b" ) || options.has( "baseN" ));
     }
 
     @Nonnull
@@ -755,10 +755,6 @@ public final class Main {
             this.value = value;
         }
 
-        public int getValue() {
-            return value;
-        }
-
         @Nonnull
         public static BaseN forValue( int value ) {
             if ( 16 == value ) {
@@ -775,6 +771,10 @@ public final class Main {
                 "Unsupported value of base encoded provided.  Supported values: 16, 32, 64, Provided Value: %d",
                 value
             ) );
+        }
+
+        public int getValue() {
+            return value;
         }
     }
 

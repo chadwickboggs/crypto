@@ -3,7 +3,6 @@ package com.tiffanytimbric.crypto.cli;
 import org.apache.commons.codec.binary.Base32;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;

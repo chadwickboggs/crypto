@@ -1,9 +1,6 @@
 package com.tiffanytimbric.crypto.api;
 
 
-import com.tiffanytimbric.crypto.api.Cryptosystem;
-
-
 public abstract class CryptosystemBase implements Cryptosystem {
 
     protected int chunkSizeEncrypt;
