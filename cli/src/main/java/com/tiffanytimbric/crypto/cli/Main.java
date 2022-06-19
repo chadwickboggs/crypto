@@ -43,14 +43,14 @@ import javax.annotation.Nullable;
  * <b>Presently Supported Cryptosystems:</b> NOOP, XOR, NTRU
  * <p>
  * Input gets read from stdin.  Output gets written to stdout.  Encryption
- * output may be Base64 encoded.  Decryption input may be Base64 encoded.
+ * output may be BaseN encoded.  Decryption input may be BaseN decoded.
  */
 public final class Main {
 
+    public static final String PF_CRYPTOSYSTEMS_CLASSNAME = "crypto.cryptosystem.%s.classname";
     private static final String USAGE_FILENAME_FORMAT = "usage-%s.txt";
     private static final String CONFIG_FILENAME = "config.properties";
     private static final String PN_CRYPTOSYSTEM_NAMES = "crypto.cryptosystem_names";
-    public static final String PF_CRYPTOSYSTEMS_CLASSNAME = "crypto.cryptosystem.%s.classname";
     private static final int DEFAULT_THREAD_COUNT = 1;
 
     private static volatile BufferedInputStream bufferedInputStream = null;
@@ -109,9 +109,15 @@ public final class Main {
                         // 2.1. Input one threadCount sized list of chunks.
                         //
                         final List<byte[]> inputList = new ArrayList<>();
-                        if ( config.base64DecodeInput() ) {
+                        if ( config.baseNDecodeInput() ) {
                             inputList.addAll(
-                                Base64Util.decode( inputTextChunks( config.threadCount(), inputStreamReader ) )
+                                baseNDecode(
+                                    inputTextChunks(
+                                        config.chunkSize(), config.threadCount(), config.baseNDecodeInput(),
+                                        config.baseN(), inputStreamReader
+                                    ),
+                                    config.baseN()
+                                )
                             );
                         }
                         else {
@@ -133,11 +139,16 @@ public final class Main {
                         //
                         // 2.3. Output the processed list of chunks.
                         //
-                        if ( config.base64EncodeOutput() ) {
-                            writeTextOutputList( Base64Util.encode( outputList ), outputStreamWriter );
-                        }
-                        else {
-                            writeOutputList( outputList, bufferedOutputStream );
+                        if ( !isEmpty( outputList ) ) {
+                            if ( config.baseNEncodeOutput() ) {
+                                writeTextOutputList(
+                                    baseNEncode( outputList, config.baseN() ),
+                                    outputStreamWriter
+                                );
+                            }
+                            else {
+                                writeOutputList( outputList, bufferedOutputStream );
+                            }
                         }
 
                         outputStreamWriter.flush();
@@ -152,6 +163,46 @@ public final class Main {
         }
 
         exit( ExitCode.SUCCESS );
+    }
+
+    @Nonnull
+    private static List<String> baseNEncode( @Nonnull final List<byte[]> bytes, int baseN ) {
+        switch ( BaseN.forValue( baseN ) ) {
+            case Sixteen -> {
+                return Base16Util.encode( bytes );
+            }
+            case ThirtyTwo -> {
+                return Base32Util.encode( bytes );
+            }
+            case SixtyFour -> {
+                return Base64Util.encode( bytes );
+            }
+            default -> {
+                exit( ExitCode.INVALID_ARGUMENT );
+
+                return new ArrayList<>();
+            }
+        }
+    }
+
+    @Nonnull
+    private static List<byte[]> baseNDecode( @Nonnull final List<String> texts, int baseN ) {
+        switch ( BaseN.forValue( baseN ) ) {
+            case Sixteen -> {
+                return Base16Util.decode( texts );
+            }
+            case ThirtyTwo -> {
+                return Base32Util.decode( texts );
+            }
+            case SixtyFour -> {
+                return Base64Util.decode( texts );
+            }
+            default -> {
+                exit( ExitCode.INVALID_ARGUMENT );
+
+                return new ArrayList<>();
+            }
+        }
     }
 
     @Nonnull
@@ -173,7 +224,12 @@ public final class Main {
 
             exit( ExitCode.SUCCESS );
         }
-        final Cryptosystem cryptosystem = loadCryptosystems().get( cryptosystemName );
+        boolean isBaseNEncode = isBaseNEncode( options );
+        boolean isBaseNDecode = isBaseNDecode( options );
+        int baseN = getBaseN( options );
+        final Cryptosystem cryptosystem = loadCryptosystems(
+            isBaseNEncode, isBaseNDecode, baseN
+        ).get( cryptosystemName );
         if ( cryptosystem == null ) {
             throw new ValidationException( String.format(
                 "Specified cryptosystem not found.  Specified Cryptosystem: \"%s\"", cryptosystemName
@@ -195,21 +251,30 @@ public final class Main {
             threadCount = Integer.parseInt( options.valueOf( "t" ).toString() );
         }
 
-        int chunkSize = Action.ENCRYPT.equals( action )
-            ? cryptosystem.getChunkSizeEncrypt() : cryptosystem.getChunkSizeDecrypt();
-
-        boolean base64DecodeInput = isBase64Decode( options );
-        boolean base64EncodeOutput = isBase64Encode( options );
-
-        boolean useRxJava = options.has( "x" ) || options.has( "rxjava" );
-
         return new Config(
-            action, cryptosystem, chunkSize, threadCount, base64DecodeInput, base64EncodeOutput, useRxJava
+            action,
+            cryptosystem, Action.ENCRYPT.equals( action )
+            ? cryptosystem.getChunkSizeEncrypt() : cryptosystem.getChunkSizeDecrypt(),
+            threadCount,
+            isBaseNDecode,
+            isBaseNEncode,
+            baseN,
+            options.has( "x" ) || options.has( "rxjava" )
         );
     }
 
+    private static int getBaseN( @Nonnull final OptionSet options ) {
+        if ( options.has( "b" ) ) {
+            return Integer.parseInt( String.valueOf( options.valueOf( "b" ) ) );
+        }
+
+        return 64;
+    }
+
     @Nonnull
-    private static Map<String, Cryptosystem> loadCryptosystems() {
+    private static Map<String, Cryptosystem> loadCryptosystems(
+        boolean isBaseNEncode, boolean isBaseNDecode, int baseN
+    ) {
         final Map<String, Cryptosystem> cryptosystems = new HashMap<>();
         try {
             final Properties properties = new Properties();
@@ -223,6 +288,7 @@ public final class Main {
 
                     final Cryptosystem cryptosystem = (Cryptosystem) Main.class.getClassLoader()
                         .loadClass( cryptosystemClassname ).getConstructor().newInstance();
+                    cryptosystem.init( isBaseNEncode, isBaseNDecode, baseN );
                     cryptosystems.put( cryptosystemName, cryptosystem );
                 }
                 catch ( Throwable t ) {
@@ -306,14 +372,14 @@ public final class Main {
         }
     }
 
-    private static boolean isBase64Encode( @Nonnull final OptionSet options ) {
+    private static boolean isBaseNEncode( @Nonnull final OptionSet options ) {
         return (options.has( "e" ) || options.has( "encrypt" ))
-            && (options.has( "b" ) || options.has( "base64" ));
+            && (options.has( "b" ) || options.has( "baseN" ));
     }
 
-    private static boolean isBase64Decode( @Nonnull final OptionSet options ) {
+    private static boolean isBaseNDecode( @Nonnull final OptionSet options ) {
         return (options.has( "d" ) || options.has( "decrypt" ))
-            && (options.has( "b" ) || options.has( "base64" ));
+            && (options.has( "b" ) || options.has( "baseN" ));
     }
 
     @Nonnull
@@ -421,11 +487,12 @@ public final class Main {
 
     @Nonnull
     private static List<String> inputTextChunks(
-        int chunkCount, @Nonnull final InputStreamReader inputStreamReader
+        int chunkSize, int chunkCount, boolean baseNDecodeInput, int baseN,
+        @Nonnull final InputStreamReader inputStreamReader
     ) {
         final List<String> cypherTexts = new ArrayList<>();
         IntStream.rangeClosed( 1, chunkCount ).forEachOrdered( count -> {
-            String cypherText = inputTextChunk( inputStreamReader );
+            final String cypherText = inputTextChunk( baseNDecodeInput, baseN, inputStreamReader );
             if ( cypherText.length() == 0 ) {
                 return;
             }
@@ -437,30 +504,34 @@ public final class Main {
     }
 
     @Nonnull
-    private static String inputTextChunk( @Nonnull final InputStreamReader inputStreamReader ) {
+    private static String inputTextChunk(
+        boolean baseNDecodeInput, int baseN, @Nonnull final InputStreamReader inputStreamReader
+    ) {
         final StringBuilder buf = new StringBuilder();
         try {
-            char[] charBuf = new char[1];
+            char[] chars = new char[1];
             int numCharsRead;
             char lastChar = Character.MIN_VALUE;
             do {
-                while ( (numCharsRead = inputStreamReader.read( charBuf )) == 0 ) {
+                while ( (numCharsRead = inputStreamReader.read( chars )) == 0 ) {
                     // Ignore.
                 }
                 if ( numCharsRead < 0 ) {
                     break;
                 }
 
-                final CharBuffer charBuffer = CharBuffer.wrap( Arrays.copyOf( charBuf, numCharsRead ) );
-                buf.append( new String(
-                    StandardCharsets.UTF_8.encode( charBuffer ).array(),
-                    StandardCharsets.UTF_8
-                ) );
+                final CharBuffer charBuffer = CharBuffer.wrap( Arrays.copyOf( chars, numCharsRead ) );
+                buf.append(
+                    new String(
+                        StandardCharsets.UTF_8.encode( charBuffer ).array(), StandardCharsets.UTF_8
+                    ).replaceAll( "\\=", "" )
+                );
 
-                char currentChar = charBuf[numCharsRead - 1];
-                if ( currentChar == '=' && lastChar == '=' ) {
+                char currentChar = chars[numCharsRead - 1];
+                if ( baseNDecodeInput && reachedEncodingChunkDelimiter(baseN, currentChar, lastChar) ) {
                     break;
                 }
+
                 lastChar = currentChar;
             }
             while ( true );
@@ -470,6 +541,22 @@ public final class Main {
         }
 
         return buf.toString();
+    }
+
+    private static boolean reachedEncodingChunkDelimiter( int baseN, char currentChar, char lastChar ) {
+        if ( 16 == baseN && currentChar == Base16Util.DELIMITER.charAt( 0 ) ) {
+            return true;
+        }
+        else if ( 32 == baseN && currentChar == Base32Util.DELIMITER.charAt( 0 ) ) {
+            return true;
+        }
+        else if (
+            64 == baseN && currentChar == Base64Util.DELIMITER.charAt( 0 ) && lastChar == currentChar
+        ) {
+            return true;
+        }
+
+        return false;
     }
 
     @Nonnull
@@ -546,25 +633,38 @@ public final class Main {
     ) {
         final Action action = config.action();
         final Cryptosystem cryptosystem = config.cryptosystem();
-
         final byte[][] outputs = new byte[inputList.size()][];
 
         try (
             final AutoCloseableExecutorServiceHolder autoCloseableExecutorServiceHolder =
-                new AutoCloseableExecutorServiceHolder( Executors.newFixedThreadPool( config.threadCount() ) )
+                new AutoCloseableExecutorServiceHolder(
+                    Executors.newFixedThreadPool( config.threadCount() )
+                )
         ) {
             final ExecutorService executorService = autoCloseableExecutorServiceHolder.executorService();
             IntStream.range( 0, inputList.size() ).forEachOrdered( i -> {
                 final byte[][] inputs = inputList.toArray( new byte[inputList.size()][] );
                 final int index = i;
                 if ( action.equals( Action.DECRYPT ) ) {
-                    executorService.submit( () ->
-                        outputs[index] = cryptosystem.decrypt( inputs[index] )
+                    executorService.submit( () -> {
+                            try {
+                                outputs[index] = cryptosystem.decrypt( inputs[index] );
+                            }
+                            catch ( Throwable t ) {
+                                exit( t );
+                            }
+                        }
                     );
                 }
                 else if ( action.equals( Action.ENCRYPT ) ) {
-                    executorService.submit( () ->
-                        outputs[index] = cryptosystem.encrypt( inputs[index] )
+                    executorService.submit( () -> {
+                            try {
+                                outputs[index] = cryptosystem.encrypt( inputs[index] );
+                            }
+                            catch ( Throwable t ) {
+                                exit( t );
+                            }
+                        }
                     );
                 }
             } );
@@ -628,15 +728,15 @@ public final class Main {
 
     @Nonnull
     private static synchronized OptionParser getCliParser() {
-        final OptionParser parser = new OptionParser( "+c:?e?d?b?k:?t:?x?h?u?p:?" );
+        final OptionParser parser = new OptionParser( "+c:?e?d?b:?k:?t:?x?h?u?p:?" );
 
         parser.recognizeAlternativeLongOptions( true );
         parser.accepts( "cryptosystem" );
         parser.accepts( "encrypt" );
         parser.accepts( "decrypt" );
-        parser.accepts( "base64" );
+        parser.accepts( "baseN" ).withRequiredArg().defaultsTo( "64" );
         parser.accepts( "rxjava" );
-        parser.accepts( "key" ).withRequiredArg().defaultsTo( String.valueOf( 64 ) );
+        parser.accepts( "key" ).withRequiredArg().defaultsTo( "64" );
         parser.accepts( "threads" ).withRequiredArg().defaultsTo( String.valueOf( DEFAULT_THREAD_COUNT ) );
         parser.accepts( "help" );
         parser.accepts( "usage" );
@@ -653,6 +753,39 @@ public final class Main {
 
     public enum Action {
         INFO, ENCRYPT, DECRYPT
+    }
+
+
+    public enum BaseN {
+        Sixteen( 16 ), ThirtyTwo( 32 ), SixtyFour( 64 );
+
+        private final int value;
+
+        BaseN( int value ) {
+            this.value = value;
+        }
+
+        @Nonnull
+        public static BaseN forValue( int value ) {
+            if ( 16 == value ) {
+                return Sixteen;
+            }
+            if ( 32 == value ) {
+                return ThirtyTwo;
+            }
+            if ( 64 == value ) {
+                return SixtyFour;
+            }
+
+            throw new IllegalArgumentException( String.format(
+                "Unsupported value of base encoded provided.  Supported values: 16, 32, 64, Provided Value: %d",
+                value
+            ) );
+        }
+
+        public int getValue() {
+            return value;
+        }
     }
 
 

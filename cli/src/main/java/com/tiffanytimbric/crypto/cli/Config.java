@@ -8,8 +8,9 @@ public record Config(
     Cryptosystem cryptosystem,
     int chunkSize,
     int threadCount,
-    boolean base64DecodeInput,
-    boolean base64EncodeOutput,
+    boolean baseNDecodeInput,
+    boolean baseNEncodeOutput,
+    int baseN,
     boolean useRxJava
 ) {
 

@@ -6,6 +6,8 @@ import javax.annotation.Nonnull;
 
 public interface Cryptosystem {
 
+    void init( boolean isBaseNEncode, boolean isBaseNDecode, int baseN );
+
     int getChunkSizeEncrypt();
 
     void setChunkSizeEncrypt( int chunkSizeEncrypt );
