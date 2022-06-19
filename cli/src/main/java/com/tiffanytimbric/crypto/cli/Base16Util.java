@@ -10,6 +10,8 @@ import javax.annotation.Nonnull;
 
 public final class Base16Util {
 
+    public static final String DELIMITER = "=";
+
     private static Base16 base16 = new Base16();
 
     @Nonnull
@@ -29,6 +31,8 @@ public final class Base16Util {
 
     @Nonnull
     public static String encode( @Nonnull final byte[] bytes ) {
-        return new String( base16.encode( bytes ), StandardCharsets.UTF_8 );
+        return String.format(
+            "%s%s", new String( base16.encode( bytes ), StandardCharsets.UTF_8 ), DELIMITER
+        );
     }
 }

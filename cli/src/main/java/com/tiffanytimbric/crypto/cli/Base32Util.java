@@ -10,6 +10,8 @@ import javax.annotation.Nonnull;
 
 public final class Base32Util {
 
+    public static final String DELIMITER = "=";
+
     private static Base32 base32 = new Base32();
 
     @Nonnull

@@ -9,6 +9,8 @@ import javax.annotation.Nonnull;
 
 public final class Base64Util {
 
+    public static final String DELIMITER = "==";
+
     @Nonnull
     public static List<byte[]> decode( @Nonnull final List<String> texts ) {
         return texts.stream().map( Base64Util::decode ).collect( Collectors.toList() );

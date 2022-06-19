@@ -492,7 +492,7 @@ public final class Main {
     ) {
         final List<String> cypherTexts = new ArrayList<>();
         IntStream.rangeClosed( 1, chunkCount ).forEachOrdered( count -> {
-            final String cypherText = inputTextChunk( chunkSize, baseNDecodeInput, baseN, inputStreamReader );
+            final String cypherText = inputTextChunk( baseNDecodeInput, baseN, inputStreamReader );
             if ( cypherText.length() == 0 ) {
                 return;
             }
@@ -505,40 +505,31 @@ public final class Main {
 
     @Nonnull
     private static String inputTextChunk(
-        int chunkSize, boolean baseNDecodeInput, int baseN, @Nonnull final InputStreamReader inputStreamReader
+        boolean baseNDecodeInput, int baseN, @Nonnull final InputStreamReader inputStreamReader
     ) {
         final StringBuilder buf = new StringBuilder();
         try {
-            char[] charBuf = new char[1];
+            char[] chars = new char[1];
             int numCharsRead;
             char lastChar = Character.MIN_VALUE;
             do {
-                while ( (numCharsRead = inputStreamReader.read( charBuf )) == 0 ) {
+                while ( (numCharsRead = inputStreamReader.read( chars )) == 0 ) {
                     // Ignore.
                 }
                 if ( numCharsRead < 0 ) {
                     break;
                 }
 
-                final CharBuffer charBuffer = CharBuffer.wrap( Arrays.copyOf( charBuf, numCharsRead ) );
+                final CharBuffer charBuffer = CharBuffer.wrap( Arrays.copyOf( chars, numCharsRead ) );
                 buf.append(
                     new String(
-                        StandardCharsets.UTF_8.encode( charBuffer ).array(),
-                        StandardCharsets.UTF_8
+                        StandardCharsets.UTF_8.encode( charBuffer ).array(), StandardCharsets.UTF_8
                     ).replaceAll( "\\=", "" )
                 );
 
-                char currentChar = charBuf[numCharsRead - 1];
-                if ( baseNDecodeInput ) {
-                    if ( 16 == baseN && buf.length() == chunkSize ) {
-                        break;
-                    }
-                    else if ( 32 == baseN && currentChar == '=' ) {
-                        break;
-                    }
-                    else if ( 64 == baseN && currentChar == '=' && lastChar == '=' ) {
-                        break;
-                    }
+                char currentChar = chars[numCharsRead - 1];
+                if ( baseNDecodeInput && reachedEncodingChunkDelimiter(baseN, currentChar, lastChar) ) {
+                    break;
                 }
 
                 lastChar = currentChar;
@@ -550,6 +541,22 @@ public final class Main {
         }
 
         return buf.toString();
+    }
+
+    private static boolean reachedEncodingChunkDelimiter( int baseN, char currentChar, char lastChar ) {
+        if ( 16 == baseN && currentChar == Base16Util.DELIMITER.charAt( 0 ) ) {
+            return true;
+        }
+        else if ( 32 == baseN && currentChar == Base32Util.DELIMITER.charAt( 0 ) ) {
+            return true;
+        }
+        else if (
+            64 == baseN && currentChar == Base64Util.DELIMITER.charAt( 0 ) && lastChar == currentChar
+        ) {
+            return true;
+        }
+
+        return false;
     }
 
     @Nonnull
