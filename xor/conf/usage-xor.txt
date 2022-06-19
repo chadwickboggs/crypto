@@ -15,11 +15,11 @@ NOTE: You may press CTRL-D twice to the the input stream.
 
     Options
 
-	-e   | --encrypt        Encrypt from stdin to stdout.
-	-d   | --decrypt        Decrypt from stdin to stdout.
-	-b   | --base64         Base64 encode encryption output or Base64 decode decryption input.
-	-t   | --threads        Use specified number of system threads [Default: 1].
-	-k   | --key            The byte length of the shared key to use [Default: 64].
-	-x   | --rxjava         Use the RxJava (Reactive eXtension).
-	-h   | --help           Display usage information.
-	-?   | -u | --usage     Display usage information.
+	-e | --encrypt                      Encrypt from stdin to stdout.
+	-d | --decrypt                      Decrypt from stdin to stdout.
+	-b <16|32|64> | --baseN <16|32|64>  BaseN encode encryption output or BaseN decode decryption input.
+	-t <num> | --threads <num>          Use specified number of system threads [Default: 1].
+	-k <bytes> | --key <bytes>          The byte length of the shared key to use [Default: 64].
+	-x | --rxjava                       Use the RxJava (Reactive eXtension).
+	-h | --help                         Display usage information.
+	-? | -u | --usage                   Display usage information.
