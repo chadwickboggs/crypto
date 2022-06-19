@@ -60,12 +60,12 @@ public final class XorCryptosystem extends CryptosystemBase {
     private byte[] xorMessage( @Nonnull byte[] message, @Nonnull byte[] key ) {
         validateMessageLength( message, key );
 
-        final byte[] messageEncrypted = new byte[message.length];
+        final byte[] xorMessage = new byte[message.length];
         for ( int i = 0; i < message.length; i++ ) {
-            messageEncrypted[i] = (byte) (message[i] ^ key[i]);
+            xorMessage[i] = (byte) (message[i] ^ key[i]);
         }
 
-        return messageEncrypted;
+        return xorMessage;
     }
 
     @Nonnull

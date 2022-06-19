@@ -30,33 +30,34 @@ environment variable.  The below examples assume the current working directory
 
 ### Encrypting Files
 
-    $ wc -l lorem_ipsum_100.txt
+    $ a_file='src/test/resources/lorem_ipsum_100.txt'
 
-    $ cat lorem_ipsum_100.txt | bin/crypto -c XOR -e | bin/crypto -c XOR -d > /tmp/a_file.txt && wc -l lorem_ipsum_100.txt /tmp/a_file.txt && diff -q lorem_ipsum_100.txt /tmp/a_file.txt
-    $ rm /tmp/a_file.txt
+    $ cat src/test/resources/$a_file | bin/crypto -c XOR -e | bin/crypto -c XOR -d > /tmp/$a_file && wc -l src/test/resources/$a_file /tmp/$a_file && diff -q src/test/resources/$a_file /tmp/$a_file
+    $ rm /tmp/$a_file
 
-    $ cat lorem_ipsum_100.txt | bin/crypto -c XOR -e | bin/crypto -c XOR -d  > /tmp/a_file.txt && wc -l lorem_ipsum_100. txt /tmp/a_file.txt && diff -q lorem_ipsum_100.txt /tmp/a_file.txt
-    $ rm /tmp/a_file.txt
+    $ cat src/test/resources/$a_file | bin/crypto -c XOR -e | bin/crypto -c XOR -d  > /tmp/$a_file && wc -l src/test/resources/$a_file /tmp/$a_file && diff -q src/test/resources/$a_file /tmp/$a_file
+    $ rm /tmp/$a_file
 
-    $ cat lorem_ipsum_100.txt | bin/crypto -c NTRU -e | bin/crypto -c NTRU -d  > /tmp/a_file.txt && wc -l lorem_ipsum_100.txt /tmp/a_file.txt && diff -q lorem_ipsum_100.txt /tmp/a_file.txt
-    $ rm /tmp/a_file.txt
+    $ cat src/test/resources/$a_file | bin/crypto -c NTRU -e | bin/crypto -c NTRU -d  > /tmp/$a_file && wc -l src/test/resources/$a_file /tmp/$a_file && diff -q src/test/resources/$a_file /tmp/$a_file
+    $ rm /tmp/$a_file
 
-    $ cat lorem_ipsum_100.txt | bin/crypto -c NTRU -e | bin/crypto -c NTRU -d  > /tmp/a_file.txt && wc -l lorem_ipsum_100.txt /tmp/a_file.txt && diff -q lorem_ipsum_100.txt /tmp/a_file.txt
-    $ rm /tmp/a_file.txt
+    $ cat src/test/resources/$a_file | bin/crypto -c NTRU -e | bin/crypto -c NTRU -d  > /tmp/$a_file && wc -l src/test/resources/$a_file /tmp/$a_file && diff -q src/test/resources/$a_file /tmp/$a_file
+    $ rm /tmp/$a_file
 
 ### Encrypting Tar Archives
 
-    $ cp -v lorem_ipsum_100.txt lorem_ipsum_100.2.txt
+    $ cp -v $a_file lorem_ipsum_100.2.txt
     $ tar -I 'bin/crypto -c XOR -e' -cf lorem_ipsum_100.2.txt.txor lorem_ipsum_100.2.txt
-    $ rm lorem_ipsum_100.2.txt
+    $ rm lorem_ipsum_100.2.txt*
 
     $ tar -I 'bin/crypto -c XOR' -xf lorem_ipsum_100.2.txt.txor
-    $ diff -q lorem_ipsum_100.txt lorem_ipsum_100.2.txt
+    $ diff -q $a_file lorem_ipsum_100.2.txt
     $ rm lorem_ipsum_100.2.txt*
 
 ### Base<16|32|64> Encoding Files
 
-    $ cat lorem_ipsum_5.txt | bin/crypto -c NOOP -e -b 64 > lorem_ipsum_t.txt.base65 && cat lorem_ipsum_5.txt.base64 | bin/crypto -c NOOP -d -b 64
+    $ cat src/test/resources/lorem_ipsum_5.txt | bin/crypto -c NOOP -e -b 64 > lorem_ipsum_5.txt.base65 && cat lorem_ipsum_5.txt.base64 | bin/crypto -c NOOP -d -b 64
+    $ rm lorem_ipsum_5.txt*
 
 ## Code Analysis
 This Java code includes two separate implementation techiques for
