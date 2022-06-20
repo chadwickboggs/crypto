@@ -10,6 +10,7 @@ import javax.annotation.Nonnull;
  */
 public final class NoopCryptosystem extends CryptosystemBase {
 
+    public static final String NAME = "NOOP";
     public static final int DEFAULT_CHUNK_SIZE_ENCRYPT = 65536;
     public static final int DEFAULT_CHUNK_SIZE_DECRYPT = 65536;
 
@@ -20,6 +21,11 @@ public final class NoopCryptosystem extends CryptosystemBase {
     @Override
     public void init( boolean isBaseNEncode, boolean isBaseNDecode, int baseN ) {
         // Do nothing.
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 
     @Nonnull

@@ -8,6 +8,8 @@ public interface Cryptosystem {
 
     void init( boolean isBaseNEncode, boolean isBaseNDecode, int baseN );
 
+    String getName();
+
     int getChunkSizeEncrypt();
 
     void setChunkSizeEncrypt( int chunkSizeEncrypt );

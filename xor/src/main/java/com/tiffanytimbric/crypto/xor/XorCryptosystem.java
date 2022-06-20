@@ -17,12 +17,12 @@ import javax.annotation.Nullable;
  */
 public final class XorCryptosystem extends CryptosystemBase {
 
-    public static final int DEFAULT_CHUNK_SIZE_ENCRYPT = 65536;
-
-    public static final int DEFAULT_CHUNK_SIZE_DECRYPT = 65536;
-
+    public static final String NAME = "XOR";
     private static final String USER_STORE_FOLDER = System.getenv( "HOME" ) + "/.xorutil";
     private static final String KEY_FILENAME = USER_STORE_FOLDER + "/encryption_key";
+    public static final int DEFAULT_CHUNK_SIZE_ENCRYPT = 65536;
+    public static final int DEFAULT_CHUNK_SIZE_DECRYPT = 65536;
+
     private volatile byte[] key = null;
 
 
@@ -44,6 +44,11 @@ public final class XorCryptosystem extends CryptosystemBase {
     @Override
     public void init( boolean isBaseNEncode, boolean isBaseNDecode, int baseN ) {
         // Do nothing;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 
     @Nonnull
