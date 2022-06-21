@@ -1,0 +1,24 @@
+
+DESCRIPTION:
+
+    Encrypts or decrypts using the NTRU cryptosystem.  Input gets read from
+    STDIN.  Output gets written to STDOUT.
+
+    NTRU is a two key, public key, private cryptosystem.  Its keys and
+    encryption parameters get stored in the "~/.ntrutil" folder.
+
+USAGE:
+
+    $ crypto -c NTRU <options>
+
+NOTE: You may press CTRL-D twice to end the input stream.
+
+    Options
+
+	-e | --encrypt                      Encrypt from stdin to stdout.
+	-d | --decrypt                      Decrypt from stdin to stdout.
+	-b <16|32|64> | --baseN <16|32|64>  BaseN encode encryption output or BaseN decode decryption input.
+	-t <num>| --threads <num>           Use specified number of system threads [Default: 1].
+	-x | --rxjava                       Use the RxJava (Reactive eXtension).
+	-h | --help                         Display usage information.
+	-? | -u | --usage                   Display usage information.
