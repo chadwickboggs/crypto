@@ -20,8 +20,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.StringWriter;
-import java.nio.CharBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -98,81 +96,6 @@ public final class Main {
         exit( ExitCode.SUCCESS );
     }
 
-    void run(
-        @Nonnull final InputStream inputStream, @Nonnull final PrintStream outputStream,
-        @Nonnull final String... args
-    ) throws ValidationException, IOException {
-        //
-        // 1. Setup: Read config, parse command-line arguments.
-        //
-        final Config config = loadConfig( getCliParser().parse( args ) );
-
-        //
-        // 2. Execute program logic.
-        //
-        try (
-            final BufferedInputStream bufferedInputStream = getBufferedInputStream( inputStream );
-            final InputStreamReader inputStreamReader = getInputStreamReader( bufferedInputStream )
-        ) {
-            try (
-                final BufferedOutputStream bufferedOutputStream = getBufferedOutputStream( outputStream );
-                final OutputStreamWriter outputStreamWriter = getOutputStreamWriter( bufferedOutputStream )
-            ) {
-                while ( true ) {
-                    //
-                    // 2.1. Input one threadCount sized list of chunks.
-                    //
-                    final List<byte[]> inputList = new ArrayList<>();
-                    if ( config.baseNDecodeInput() ) {
-                        inputList.addAll(
-                            baseNDecode(
-                                inputTextChunks(
-                                    config.threadCount(), config.baseNDecodeInput(),
-                                    config.baseN(), inputStreamReader
-                                ),
-                                config.baseN()
-                            )
-                        );
-                    }
-                    else {
-                        inputList.addAll(
-                            inputBinaryChunks( config.chunkSize(), config.threadCount(), bufferedInputStream )
-                        );
-                    }
-                    if ( isEmpty( inputList ) ) {
-                        break;
-                    }
-                    validateInputList( inputList );
-
-                    //
-                    // 2.2. Process (encrypt/decrypt) the chunks.
-                    //
-                    final List<byte[]> outputList = processChunks( inputList, config );
-                    validateOutputList( outputList );
-
-                    //
-                    // 2.3. Output the processed list of chunks.
-                    //
-                    if ( !isEmpty( outputList ) ) {
-                        if ( config.baseNEncodeOutput() ) {
-                            writeTextOutputList(
-                                baseNEncode( outputList, config.baseN() ),
-                                outputStreamWriter
-                            );
-                        }
-                        else {
-                            writeOutputList( outputList, bufferedOutputStream );
-                        }
-                    }
-
-                    outputStreamWriter.flush();
-                    bufferedOutputStream.flush();
-                    inputList.clear();
-                }
-            }
-        }
-    }
-
     @Nonnull
     private static List<String> baseNEncode( @Nonnull final List<byte[]> bytes, int baseN ) {
         switch ( BaseN.forValue( baseN ) ) {
@@ -245,7 +168,7 @@ public final class Main {
         }
 
         if ( options.has( "k" ) || options.has( "key" ) ) {
-            if ( cryptosystemName.equals( CryptosystemName.NTRU.name() ) ) {
+            if ( cryptosystemName.equals( "NTRU" ) ) {
                 exit( ExitCode.INVALID_ARGUMENT );
             }
 
@@ -261,8 +184,9 @@ public final class Main {
 
         return new Config(
             action,
-            cryptosystem, Action.ENCRYPT.equals( action )
-            ? cryptosystem.getChunkSizeEncrypt() : cryptosystem.getChunkSizeDecrypt(),
+            cryptosystem,
+            Action.ENCRYPT.equals( action )
+                ? cryptosystem.getChunkSizeEncrypt() : cryptosystem.getChunkSizeDecrypt(),
             threadCount,
             isBaseNDecode,
             isBaseNEncode,
@@ -466,7 +390,6 @@ public final class Main {
         return cypherTexts;
     }
 
-
     @Nonnull
     private static byte[] inputBinaryChunk( int chunkSize, @Nonnull final InputStream inputStream ) {
         try ( final ByteArrayOutputStream outputStream = new ByteArrayOutputStream() ) {
@@ -491,7 +414,6 @@ public final class Main {
             throw new RuntimeException( e );
         }
     }
-
 
     @Nonnull
     private static List<String> inputTextChunks(
@@ -528,15 +450,13 @@ public final class Main {
                     break;
                 }
 
-                final CharBuffer charBuffer = CharBuffer.wrap( Arrays.copyOf( chars, numCharsRead ) );
                 buf.append(
-                    new String(
-                        StandardCharsets.UTF_8.encode( charBuffer ).array(), StandardCharsets.UTF_8
-                    ).replaceAll( "=", "" )
+                    new String( Arrays.copyOf( chars, numCharsRead ) )
+                        .replaceAll( "=", "" )
                 );
 
                 char currentChar = chars[numCharsRead - 1];
-                if ( baseNDecodeInput && reachedEncodingChunkDelimiter(baseN, currentChar, lastChar) ) {
+                if ( baseNDecodeInput && reachedEncodingChunkDelimiter( baseN, currentChar, lastChar ) ) {
                     break;
                 }
 
@@ -565,47 +485,6 @@ public final class Main {
         }
 
         return false;
-    }
-
-    @Nonnull
-    private synchronized InputStreamReader getInputStreamReader( @Nonnull InputStream inputStream ) {
-        if ( inputStreamReader == null ) {
-            inputStreamReader = new InputStreamReader( getBufferedInputStream( inputStream ) );
-        }
-
-        return inputStreamReader;
-    }
-
-    private synchronized BufferedInputStream getBufferedInputStream(
-        @Nonnull final InputStream inputStream
-    ) {
-        if ( bufferedInputStream == null ) {
-            bufferedInputStream = new BufferedInputStream( inputStream );
-        }
-
-        return bufferedInputStream;
-    }
-
-    @Nonnull
-    private synchronized OutputStreamWriter getOutputStreamWriter(
-        @Nonnull final OutputStream outputStream
-    ) {
-        if ( outputStreamWriter == null ) {
-            outputStreamWriter = new OutputStreamWriter( getBufferedOutputStream( outputStream ) );
-        }
-
-        return outputStreamWriter;
-    }
-
-    @Nonnull
-    private synchronized BufferedOutputStream getBufferedOutputStream(
-        @Nonnull final OutputStream outputStream
-    ) {
-        if ( bufferedOutputStream == null ) {
-            bufferedOutputStream = new BufferedOutputStream( outputStream );
-        }
-
-        return bufferedOutputStream;
     }
 
     private static void validateInputList(
@@ -753,9 +632,119 @@ public final class Main {
         return parser;
     }
 
+    void run(
+        @Nonnull final InputStream inputStream, @Nonnull final PrintStream outputStream,
+        @Nonnull final String... args
+    ) throws ValidationException, IOException {
+        //
+        // 1. Setup: Read config, parse command-line arguments.
+        //
+        final Config config = loadConfig( getCliParser().parse( args ) );
 
-    public enum CryptosystemName {
-        NOOP, XOR, NTRU
+        //
+        // 2. Execute program logic.
+        //
+        try (
+            final BufferedInputStream bufferedInputStream = getBufferedInputStream( inputStream );
+            final InputStreamReader inputStreamReader = getInputStreamReader( bufferedInputStream )
+        ) {
+            try (
+                final BufferedOutputStream bufferedOutputStream = getBufferedOutputStream( outputStream );
+                final OutputStreamWriter outputStreamWriter = getOutputStreamWriter( bufferedOutputStream )
+            ) {
+                while ( true ) {
+                    //
+                    // 2.1. Input one threadCount sized list of chunks.
+                    //
+                    final List<byte[]> inputList = new ArrayList<>();
+                    if ( config.baseNDecodeInput() ) {
+                        inputList.addAll(
+                            baseNDecode(
+                                inputTextChunks(
+                                    config.threadCount(), config.baseNDecodeInput(), config.baseN(), inputStreamReader
+                                ),
+                                config.baseN()
+                            )
+                        );
+                    }
+                    else {
+                        inputList.addAll(
+                            inputBinaryChunks( config.chunkSize(), config.threadCount(), bufferedInputStream )
+                        );
+                    }
+                    if ( isEmpty( inputList ) ) {
+                        break;
+                    }
+                    validateInputList( inputList );
+
+                    //
+                    // 2.2. Process (encrypt/decrypt) the chunks.
+                    //
+                    final List<byte[]> outputList = processChunks( inputList, config );
+                    validateOutputList( outputList );
+
+                    //
+                    // 2.3. Output the processed list of chunks.
+                    //
+                    if ( !isEmpty( outputList ) ) {
+                        if ( config.baseNEncodeOutput() ) {
+                            writeTextOutputList(
+                                baseNEncode( outputList, config.baseN() ),
+                                outputStreamWriter
+                            );
+                        }
+                        else {
+                            writeOutputList( outputList, bufferedOutputStream );
+                        }
+                    }
+
+                    outputStreamWriter.flush();
+                    bufferedOutputStream.flush();
+                    inputList.clear();
+                }
+            }
+        }
+    }
+
+    @Nonnull
+    private synchronized InputStreamReader getInputStreamReader( @Nonnull InputStream inputStream ) {
+        if ( inputStreamReader == null ) {
+            inputStreamReader = new InputStreamReader( getBufferedInputStream( inputStream ) );
+        }
+
+        return inputStreamReader;
+    }
+
+    private synchronized BufferedInputStream getBufferedInputStream(
+        @Nonnull final InputStream inputStream
+    ) {
+        if ( bufferedInputStream == null ) {
+            bufferedInputStream = new BufferedInputStream( inputStream );
+        }
+
+        return bufferedInputStream;
+    }
+
+    @Nonnull
+    private synchronized OutputStreamWriter getOutputStreamWriter(
+        @Nonnull final OutputStream outputStream
+    ) {
+        if ( outputStreamWriter == null ) {
+            outputStreamWriter = new OutputStreamWriter( getBufferedOutputStream( outputStream ) );
+        }
+
+        return outputStreamWriter;
+    }
+
+    @Nonnull
+    private synchronized BufferedOutputStream getBufferedOutputStream(
+        @Nonnull final OutputStream outputStream
+    ) {
+        if ( bufferedOutputStream == null ) {
+            bufferedOutputStream = new BufferedOutputStream( outputStream );
+        }
+
+        return bufferedOutputStream;
     }
 
 

@@ -23,6 +23,57 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class MainTest {
 
+    private static void encrypt(
+        @Nonnull final String inputFilename, @Nonnull final String cryptosystemName, int baseN,
+        @Nonnull final ByteArrayOutputStream byteArrayOutputStream
+    ) throws ValidationException, IOException {
+        final List<String> encryptArgs = new ArrayList<>( Arrays.asList(
+            "-c", cryptosystemName, "-e", "-t", "4"
+        ) );
+        if ( baseN > 0 ) {
+            encryptArgs.add( "-b" );
+            encryptArgs.add( String.valueOf( baseN ) );
+        }
+
+        new Main().run(
+            getInputStreamForResource( inputFilename ),
+            new PrintStream( byteArrayOutputStream ),
+            encryptArgs.toArray( new String[0] )
+        );
+    }
+
+    private static void decrypt(
+        @Nonnull final ByteArrayInputStream inputStream,
+        @Nonnull final String cryptosystemName, int baseN,
+        @Nonnull final ByteArrayOutputStream byteArrayOutputStreamDecryption
+    ) throws ValidationException, IOException {
+        final List<String> decryptArgs = new ArrayList<>( Arrays.asList(
+            "-c", cryptosystemName, "-d", "-t", "4"
+        ) );
+        if ( baseN > 0 ) {
+            decryptArgs.add( "-b" );
+            decryptArgs.add( String.valueOf( baseN ) );
+        }
+
+        new Main().run(
+            inputStream,
+            new PrintStream( byteArrayOutputStreamDecryption ),
+            decryptArgs.toArray( new String[0] )
+        );
+    }
+
+    @Nonnull
+    private static String stringFor( @Nonnull final ByteArrayOutputStream byteArrayOutputStream ) {
+        return byteArrayOutputStream.toString( StandardCharsets.UTF_8 );
+    }
+
+    @Nullable
+    private static InputStream getInputStreamForResource( @Nonnull final String filename ) {
+        return Main.class.getClassLoader().getResourceAsStream(
+            filename
+        );
+    }
+
     @ParameterizedTest
     @ValueSource( strings = {"NOOP", "XOR", "NTRU"} )
     void main( @Nonnull final String cryptosystemName ) {
@@ -33,7 +84,7 @@ class MainTest {
 
         inputFilenames.forEach( inputFilename ->
             baseNs.forEach( baseN ->
-                main( inputFilename, cryptosystemName, baseN)
+                main( inputFilename, cryptosystemName, baseN )
             )
         );
     }
@@ -61,45 +112,6 @@ class MainTest {
         }
     }
 
-    private static void encrypt(
-        @Nonnull final String inputFilename, @Nonnull final String cryptosystemName, int baseN,
-        @Nonnull final ByteArrayOutputStream byteArrayOutputStream
-    ) throws ValidationException, IOException {
-        final List<String> encryptArgs = new ArrayList<>( Arrays.asList(
-            "-c", cryptosystemName, "-e", "-t", "4"
-        ) );
-        if ( baseN > 0 ) {
-            encryptArgs.add( "-b" );
-            encryptArgs.add( String.valueOf( baseN ) );
-        }
-
-        new Main().run(
-            getInputStreamForResource( inputFilename ),
-            new PrintStream( byteArrayOutputStream ),
-            encryptArgs.toArray(new String[0])
-        );
-    }
-
-    private static void decrypt(
-        @Nonnull final ByteArrayInputStream inputStream,
-        @Nonnull final String cryptosystemName, int baseN,
-        @Nonnull final ByteArrayOutputStream byteArrayOutputStreamDecryption
-    ) throws ValidationException, IOException {
-        final List<String> decryptArgs = new ArrayList<>( Arrays.asList(
-            "-c", cryptosystemName, "-d", "-t", "4"
-        ) );
-        if ( baseN > 0 ) {
-            decryptArgs.add( "-b" );
-            decryptArgs.add( String.valueOf( baseN ) );
-        }
-
-        new Main().run(
-            inputStream,
-            new PrintStream( byteArrayOutputStreamDecryption ),
-            decryptArgs.toArray(new String[0])
-        );
-    }
-
     @Nonnull
     private String stringFor( @Nonnull final InputStream inputStream ) throws IOException {
         StringBuilder buf = new StringBuilder();
@@ -116,17 +128,5 @@ class MainTest {
         }
 
         return buf.toString();
-    }
-
-    @Nonnull
-    private static String stringFor( @Nonnull final ByteArrayOutputStream byteArrayOutputStream ) {
-        return byteArrayOutputStream.toString( StandardCharsets.UTF_8 );
-    }
-
-    @Nullable
-    private static InputStream getInputStreamForResource( @Nonnull final String filename ) {
-        return Main.class.getClassLoader().getResourceAsStream(
-            filename
-        );
     }
 }

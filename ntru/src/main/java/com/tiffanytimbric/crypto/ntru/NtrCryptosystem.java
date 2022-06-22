@@ -21,16 +21,12 @@ import javax.annotation.Nonnull;
 public final class NtrCryptosystem extends CryptosystemBase {
 
     public static final String NAME = "NTRU";
+    public static final int DEFAULT_CHUNK_SIZE_ENCRYPT = 64;
+    public static final int DEFAULT_CHUNK_SIZE_DECRYPT = 604;
     private static final String USER_STORE_FOLDER = System.getenv( "HOME" ) + "/.ntrutil";
     private static final String PRIVATE_KEY_FILENAME = USER_STORE_FOLDER + "/encryption_private_key";
     private static final String PUBLIC_KEY_FILENAME = USER_STORE_FOLDER + "/encryption_public_key";
     private static final String ENCRYPTION_PARAMETERS_FILENAME = USER_STORE_FOLDER + "/encryption_parameters";
-    public static final int DEFAULT_CHUNK_SIZE_ENCRYPT = 64;
-    public static final int DEFAULT_CHUNK_SIZE_DECRYPT = 604; // 16:1208, 32:968, 64:808
-    public static final int BASE16_CHUNK_SIZE_DECRYPT = 1208;
-    public static final int BASE32_CHUNK_SIZE_DECRYPT = 968;
-    public static final int BASE64_CHUNK_SIZE_DECRYPT = 808;
-
     private volatile NtruEncrypt ntru = null;
     private volatile EncryptionParameters encryptionParameters = null;
     private volatile EncryptionKeyPair keyPair = null;
@@ -43,19 +39,7 @@ public final class NtrCryptosystem extends CryptosystemBase {
 
     @Override
     public void init( boolean isBaseNEncode, boolean isBaseNDecode, int baseN ) {
-        if ( !isBaseNDecode ) {
-            return;
-        }
-
-        if ( 16 == baseN ) {
-            setChunkSizeDecrypt( BASE16_CHUNK_SIZE_DECRYPT );
-        }
-        if ( 32 == baseN ) {
-            setChunkSizeDecrypt( BASE32_CHUNK_SIZE_DECRYPT );
-        }
-        if ( 64 == baseN ) {
-            setChunkSizeDecrypt( BASE64_CHUNK_SIZE_DECRYPT );
-        }
+        // Do nothing.
     }
 
     @Override

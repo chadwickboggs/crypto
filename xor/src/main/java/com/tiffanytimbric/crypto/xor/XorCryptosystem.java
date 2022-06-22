@@ -18,11 +18,10 @@ import javax.annotation.Nullable;
 public final class XorCryptosystem extends CryptosystemBase {
 
     public static final String NAME = "XOR";
-    private static final String USER_STORE_FOLDER = System.getenv( "HOME" ) + "/.xorutil";
-    private static final String KEY_FILENAME = USER_STORE_FOLDER + "/encryption_key";
     public static final int DEFAULT_CHUNK_SIZE_ENCRYPT = 65536;
     public static final int DEFAULT_CHUNK_SIZE_DECRYPT = 65536;
-
+    private static final String USER_STORE_FOLDER = System.getenv( "HOME" ) + "/.xorutil";
+    private static final String KEY_FILENAME = USER_STORE_FOLDER + "/encryption_key";
     private volatile byte[] key = null;
 
 
