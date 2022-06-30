@@ -478,13 +478,8 @@ public final class Main {
         else if ( 32 == baseN && currentChar == Base32Util.DELIMITER.charAt( 0 ) ) {
             return true;
         }
-        else if (
-            64 == baseN && currentChar == Base64Util.DELIMITER.charAt( 0 ) && lastChar == currentChar
-        ) {
-            return true;
-        }
 
-        return false;
+        return 64 == baseN && currentChar == Base64Util.DELIMITER.charAt( 0 ) && lastChar == currentChar;
     }
 
     private static void validateInputList(
