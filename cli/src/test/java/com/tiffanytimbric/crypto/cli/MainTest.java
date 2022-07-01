@@ -35,11 +35,11 @@ class MainTest {
             encryptArgs.add( String.valueOf( baseN ) );
         }
 
-        new Main().run(
+        new Main(
             getInputStreamForResource( inputFilename ),
             new PrintStream( byteArrayOutputStream ),
             encryptArgs.toArray( new String[0] )
-        );
+        ).run();
     }
 
     private static void decrypt(
@@ -55,11 +55,11 @@ class MainTest {
             decryptArgs.add( String.valueOf( baseN ) );
         }
 
-        new Main().run(
+        new Main(
             inputStream,
             new PrintStream( byteArrayOutputStreamDecryption ),
             decryptArgs.toArray( new String[0] )
-        );
+        ).run();
     }
 
     @Nonnull

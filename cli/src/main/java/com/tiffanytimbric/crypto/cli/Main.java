@@ -44,7 +44,7 @@ import javax.annotation.Nullable;
  * Input gets read from stdin.  Output gets written to stdout.  Encryption
  * output may be BaseN encoded.  Decryption input may be BaseN decoded.
  */
-public final class Main {
+public final class Main implements Runnable {
 
     public static final String PF_CRYPTOSYSTEMS_CLASSNAME = "crypto.cryptosystem.%s.classname";
     public static final String USAGE_FILENAME_FORMAT = "usage-%s.txt";
@@ -52,11 +52,26 @@ public final class Main {
     public static final String PN_CRYPTOSYSTEM_NAMES = "crypto.cryptosystem_names";
     private static final int DEFAULT_THREAD_COUNT = 1;
 
+    private final InputStream inputStream;
+    private final PrintStream outputStream;
+    private final Config config;
+
     private volatile BufferedInputStream bufferedInputStream = null;
     private volatile InputStreamReader inputStreamReader = null;
     private volatile BufferedOutputStream bufferedOutputStream = null;
     private volatile OutputStreamWriter outputStreamWriter = null;
 
+
+    public Main(
+        @Nonnull final InputStream inputStream,
+        @Nonnull final PrintStream outputStream,
+        @Nonnull final String... args
+    ) throws ValidationException {
+        this.inputStream = inputStream;
+        this.outputStream = outputStream;
+
+        this.config = loadConfig( getCliParser().parse( args ) );
+    }
 
     /**
      * Executes this program which reads its config, parses its command-line arguments,
@@ -87,7 +102,7 @@ public final class Main {
         }
 
         try {
-            new Main().run( System.in, System.out, args );
+            new Main( System.in, System.out, args ).run();
         }
         catch ( final Throwable t ) {
             exit( t );
@@ -627,77 +642,74 @@ public final class Main {
         return parser;
     }
 
-    void run(
-        @Nonnull final InputStream inputStream, @Nonnull final PrintStream outputStream,
-        @Nonnull final String... args
-    ) throws ValidationException, IOException {
-        //
-        // 1. Setup: Read config, parse command-line arguments.
-        //
-        final Config config = loadConfig( getCliParser().parse( args ) );
-
-        //
-        // 2. Execute program logic.
-        //
-        try (
-            final BufferedInputStream bufferedInputStream = getBufferedInputStream( inputStream );
-            final InputStreamReader inputStreamReader = getInputStreamReader( bufferedInputStream )
-        ) {
+    public void run() {
+        try {
+            //
+            // 1. Execute program logic.
+            //
             try (
-                final BufferedOutputStream bufferedOutputStream = getBufferedOutputStream( outputStream );
-                final OutputStreamWriter outputStreamWriter = getOutputStreamWriter( bufferedOutputStream )
+                final BufferedInputStream bufferedInputStream = getBufferedInputStream( inputStream );
+                final InputStreamReader inputStreamReader = getInputStreamReader( bufferedInputStream )
             ) {
-                while ( true ) {
-                    //
-                    // 2.1. Input one threadCount sized list of chunks.
-                    //
-                    final List<byte[]> inputList = new ArrayList<>();
-                    if ( config.baseNDecodeInput() ) {
-                        inputList.addAll(
-                            baseNDecode(
-                                inputTextChunks(
-                                    config.threadCount(), config.baseNDecodeInput(), config.baseN(), inputStreamReader
-                                ),
-                                config.baseN()
-                            )
-                        );
-                    }
-                    else {
-                        inputList.addAll(
-                            inputBinaryChunks( config.chunkSize(), config.threadCount(), bufferedInputStream )
-                        );
-                    }
-                    if ( isEmpty( inputList ) ) {
-                        break;
-                    }
-                    validateInputList( inputList );
-
-                    //
-                    // 2.2. Process (encrypt/decrypt) the chunks.
-                    //
-                    final List<byte[]> outputList = processChunks( inputList, config );
-                    validateOutputList( outputList );
-
-                    //
-                    // 2.3. Output the processed list of chunks.
-                    //
-                    if ( !isEmpty( outputList ) ) {
-                        if ( config.baseNEncodeOutput() ) {
-                            writeTextOutputList(
-                                baseNEncode( outputList, config.baseN() ),
-                                outputStreamWriter
+                try (
+                    final BufferedOutputStream bufferedOutputStream = getBufferedOutputStream( outputStream );
+                    final OutputStreamWriter outputStreamWriter = getOutputStreamWriter( bufferedOutputStream )
+                ) {
+                    while ( true ) {
+                        //
+                        // 1.1. Input one threadCount sized list of chunks.
+                        //
+                        final List<byte[]> inputList = new ArrayList<>();
+                        if ( config.baseNDecodeInput() ) {
+                            inputList.addAll(
+                                baseNDecode(
+                                    inputTextChunks(
+                                        config.threadCount(), config.baseNDecodeInput(), config.baseN(), inputStreamReader
+                                    ),
+                                    config.baseN()
+                                )
                             );
                         }
                         else {
-                            writeOutputList( outputList, bufferedOutputStream );
+                            inputList.addAll(
+                                inputBinaryChunks( config.chunkSize(), config.threadCount(), bufferedInputStream )
+                            );
                         }
-                    }
+                        if ( isEmpty( inputList ) ) {
+                            break;
+                        }
+                        validateInputList( inputList );
 
-                    outputStreamWriter.flush();
-                    bufferedOutputStream.flush();
-                    inputList.clear();
+                        //
+                        // 1.2. Process (encrypt/decrypt) the chunks.
+                        //
+                        final List<byte[]> outputList = processChunks( inputList, config );
+                        validateOutputList( outputList );
+
+                        //
+                        // 1.3. Output the processed list of chunks.
+                        //
+                        if ( !isEmpty( outputList ) ) {
+                            if ( config.baseNEncodeOutput() ) {
+                                writeTextOutputList(
+                                    baseNEncode( outputList, config.baseN() ),
+                                    outputStreamWriter
+                                );
+                            }
+                            else {
+                                writeOutputList( outputList, bufferedOutputStream );
+                            }
+                        }
+
+                        outputStreamWriter.flush();
+                        bufferedOutputStream.flush();
+                        inputList.clear();
+                    }
                 }
             }
+        }
+        catch ( final Throwable t ) {
+            exit( t );
         }
     }
 
