@@ -643,73 +643,97 @@ public final class Main implements Runnable {
     }
 
     public void run() {
+        runSafe();
+    }
+
+    public void runSafe() {
         try {
-            //
-            // 1. Execute program logic.
-            //
-            try (
-                final BufferedInputStream bufferedInputStream = getBufferedInputStream( inputStream );
-                final InputStreamReader inputStreamReader = getInputStreamReader( bufferedInputStream )
-            ) {
-                try (
-                    final BufferedOutputStream bufferedOutputStream = getBufferedOutputStream( outputStream );
-                    final OutputStreamWriter outputStreamWriter = getOutputStreamWriter( bufferedOutputStream )
-                ) {
-                    while ( true ) {
-                        //
-                        // 1.1. Input one threadCount sized list of chunks.
-                        //
-                        final List<byte[]> inputList = new ArrayList<>();
-                        if ( config.baseNDecodeInput() ) {
-                            inputList.addAll(
-                                baseNDecode(
-                                    inputTextChunks(
-                                        config.threadCount(), config.baseNDecodeInput(), config.baseN(), inputStreamReader
-                                    ),
-                                    config.baseN()
-                                )
-                            );
-                        }
-                        else {
-                            inputList.addAll(
-                                inputBinaryChunks( config.chunkSize(), config.threadCount(), bufferedInputStream )
-                            );
-                        }
-                        if ( isEmpty( inputList ) ) {
-                            break;
-                        }
-                        validateInputList( inputList );
-
-                        //
-                        // 1.2. Process (encrypt/decrypt) the chunks.
-                        //
-                        final List<byte[]> outputList = processChunks( inputList, config );
-                        validateOutputList( outputList );
-
-                        //
-                        // 1.3. Output the processed list of chunks.
-                        //
-                        if ( !isEmpty( outputList ) ) {
-                            if ( config.baseNEncodeOutput() ) {
-                                writeTextOutputList(
-                                    baseNEncode( outputList, config.baseN() ),
-                                    outputStreamWriter
-                                );
-                            }
-                            else {
-                                writeOutputList( outputList, bufferedOutputStream );
-                            }
-                        }
-
-                        outputStreamWriter.flush();
-                        bufferedOutputStream.flush();
-                        inputList.clear();
-                    }
-                }
-            }
+            runRaw();
         }
         catch ( final Throwable t ) {
             exit( t );
+        }
+    }
+
+    public void runRaw() throws IOException, ValidationException {
+        //
+        // 1. Execute program logic.
+        //
+        try (
+            final BufferedInputStream bufferedInputStream = getBufferedInputStream( inputStream );
+            final InputStreamReader inputStreamReader = getInputStreamReader( bufferedInputStream )
+        ) {
+            runBody( bufferedInputStream, inputStreamReader );
+        }
+    }
+
+    private void runBody(
+        @Nonnull final BufferedInputStream bufferedInputStream,
+        @Nonnull final InputStreamReader inputStreamReader
+    ) throws IOException, ValidationException {
+        try (
+            final BufferedOutputStream bufferedOutputStream = getBufferedOutputStream( outputStream );
+            final OutputStreamWriter outputStreamWriter = getOutputStreamWriter( bufferedOutputStream )
+        ) {
+            runBodyInternal( bufferedInputStream, inputStreamReader, bufferedOutputStream, outputStreamWriter );
+        }
+    }
+
+    private void runBodyInternal(
+        @Nonnull final BufferedInputStream bufferedInputStream,
+        @Nonnull final InputStreamReader inputStreamReader,
+        @Nonnull final BufferedOutputStream bufferedOutputStream,
+        @Nonnull final OutputStreamWriter outputStreamWriter
+    ) throws ValidationException, IOException {
+        while ( true ) {
+            //
+            // 1.1. Input one threadCount sized list of chunks.
+            //
+            final List<byte[]> inputList = new ArrayList<>();
+            if ( config.baseNDecodeInput() ) {
+                inputList.addAll(
+                    baseNDecode(
+                        inputTextChunks(
+                            config.threadCount(), config.baseNDecodeInput(), config.baseN(), inputStreamReader
+                        ),
+                        config.baseN()
+                    )
+                );
+            }
+            else {
+                inputList.addAll(
+                    inputBinaryChunks( config.chunkSize(), config.threadCount(), bufferedInputStream )
+                );
+            }
+            if ( isEmpty( inputList ) ) {
+                break;
+            }
+            validateInputList( inputList );
+
+            //
+            // 1.2. Process (encrypt/decrypt) the chunks.
+            //
+            final List<byte[]> outputList = processChunks( inputList, config );
+            validateOutputList( outputList );
+
+            //
+            // 1.3. Output the processed list of chunks.
+            //
+            if ( !isEmpty( outputList ) ) {
+                if ( config.baseNEncodeOutput() ) {
+                    writeTextOutputList(
+                        baseNEncode( outputList, config.baseN() ),
+                        outputStreamWriter
+                    );
+                }
+                else {
+                    writeOutputList( outputList, bufferedOutputStream );
+                }
+            }
+
+            outputStreamWriter.flush();
+            bufferedOutputStream.flush();
+            inputList.clear();
         }
     }
 
