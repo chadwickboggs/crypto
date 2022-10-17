@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -26,7 +27,7 @@ class MainTest {
     private static void encrypt(
         @Nonnull final String inputFilename, @Nonnull final String cryptosystemName, int baseN,
         @Nonnull final ByteArrayOutputStream byteArrayOutputStream
-    ) throws ValidationException, IOException {
+    ) throws ValidationException {
         final List<String> encryptArgs = new ArrayList<>( Arrays.asList(
             "-c", cryptosystemName, "-e", "-t", "4"
         ) );
@@ -36,7 +37,7 @@ class MainTest {
         }
 
         new Main(
-            getInputStreamForResource( inputFilename ),
+            Objects.requireNonNull( getInputStreamForResource( inputFilename ) ),
             new PrintStream( byteArrayOutputStream ),
             encryptArgs.toArray( new String[0] )
         ).run();
@@ -46,7 +47,7 @@ class MainTest {
         @Nonnull final ByteArrayInputStream inputStream,
         @Nonnull final String cryptosystemName, int baseN,
         @Nonnull final ByteArrayOutputStream byteArrayOutputStreamDecryption
-    ) throws ValidationException, IOException {
+    ) throws ValidationException {
         final List<String> decryptArgs = new ArrayList<>( Arrays.asList(
             "-c", cryptosystemName, "-d", "-t", "4"
         ) );
@@ -102,7 +103,9 @@ class MainTest {
                 cryptosystemName, baseN, byteArrayOutputStreamDecryption
             );
 
-            final String inputString = stringFor( getInputStreamForResource( inputFilename ) );
+            final String inputString = stringFor( Objects.requireNonNull(
+                getInputStreamForResource( inputFilename )
+            ) );
             final String decryptedString = stringFor( byteArrayOutputStreamDecryption );
 
             Assertions.assertEquals( inputString, decryptedString );
