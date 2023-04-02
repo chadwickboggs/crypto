@@ -18,8 +18,8 @@
     </modules>
 
     <properties>
-        <maven.compiler.source>19</maven.compiler.source>
-        <maven.compiler.target>19</maven.compiler.target>
+        <maven.compiler.source>20</maven.compiler.source>
+        <maven.compiler.target>20</maven.compiler.target>
     </properties>
 
     <dependencies>
@@ -42,10 +42,10 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <release>19</release>
+                    <release>20</release>
                     <compilerArgs>--enable-preview</compilerArgs>
-                    <source>19</source>
-                    <target>19</target>
+                    <source>20</source>
+                    <target>20</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -70,7 +70,7 @@
                             <rules>
                                 <banDuplicatePomDependencyVersions/>
                                 <requireJavaVersion>
-                                    <version>19</version>
+                                    <version>20</version>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>
